@@ -2,16 +2,18 @@
   (:require [midje.sweet :refer :all]
             [adventofcode.core :refer :all]))
 
-(println "You should expect to see three failures below.")
-
-(facts "about `first-element`"
-  (fact "it normally returns the first element"
-    (first-element [1 2 3] :default) => 1
-    (first-element '(1 2 3) :default) => 1)
-
-  ;; I'm a little unsure how Clojure types map onto the Lisp I'm used to.
-  (fact "default value is returned for empty sequences"
-    (first-element [] :default) => :default
-    (first-element '() :default) => :default
-    (first-element nil :default) => :default
-    (first-element (filter even? [1 3 5]) :default) => :default))
+(facts "about calculating fuel requirements for a module"
+       (fact "fuel requirement for a zero mass module is zero"
+             (fuel-required 0) => 0)
+       (fact "fuel requirement for a 1 mass module is 0"
+             (fuel-required 1) => 0)
+       (fact "for larger individual modules"
+             (fuel-required 12) => 2
+             (fuel-required 14) => 2
+             (fuel-required 1969) => 966
+             (fuel-required 100756) => 50346)
+       (fact "for multiple modules"
+             (total-fuel-required [0]) => 0
+             (total-fuel-required [12]) => 2
+             (total-fuel-required [12 14]) => 4
+             (total-fuel-required [12 14 1969 100756]) => 51316))
