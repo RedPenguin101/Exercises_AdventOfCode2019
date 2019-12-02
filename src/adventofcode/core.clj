@@ -1,5 +1,6 @@
 (ns adventofcode.core
-  (:require [adventofcode.fuel-calculator :as fuel]))
+  (:require [adventofcode.fuel-calculator :as fuel]
+            [adventofcode.intcode-emulator :as intcode]))
 
 (defn file->vec [filename]
   (vec (map #(Integer/parseInt %) (clojure.string/split (slurp filename) #"\n"))))
