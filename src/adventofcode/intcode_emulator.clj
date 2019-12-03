@@ -21,3 +21,16 @@
 (defn load-memory-state [filename]
   (vec (map #(Integer/parseInt %) (clojure.string/split (clojure.string/trim (slurp filename)) #","))))
 
+(defn run-program [noun verb filename]
+  (-> (load-memory-state filename)
+      (assoc 1 noun)
+      (assoc 2 verb)
+      (run)
+      (first)))
+
+(defn find-output [output filename]
+  (for [noun (range 100)
+        verb (range 100)
+        :let [result (run-program noun verb filename)]
+        :when (= output result)]
+    {:result result :noun noun :verb verb :noun-verb-comb (+ (* 100 noun) verb)}))

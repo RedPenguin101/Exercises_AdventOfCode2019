@@ -11,8 +11,6 @@
 (defn -main
   [& args]
   (println "---Day 2.1---")
-  (println (-> (intcode/load-memory-state "intcode.txt")
-               (assoc 1 12)
-               (assoc 2 2)
-               (intcode/run)
-               (first))))
+  (println (intcode/run-program 12 2 "intcode.txt"))
+  (println "---Day 2.2---")
+  (println (intcode/find-output 19690720 "intcode.txt")))
