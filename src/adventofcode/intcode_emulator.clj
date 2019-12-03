@@ -13,7 +13,6 @@
 (defn run-intcode
   ([code] (run-intcode 0 code))
   ([start-pos code]
-   (cond
-     (= 1 (code start-pos)) (run-intcode (+ 4 start-pos) (operation + start-pos code))
-     (= 2 (code start-pos)) (run-intcode (+ 4 start-pos) (operation * start-pos code))
-     (= 99 (code start-pos)) code)))
+   (if (= 99 (code start-pos))
+     code
+     (recur (+ 4 start-pos) (operation (ops (code start-pos)) start-pos code)))))
