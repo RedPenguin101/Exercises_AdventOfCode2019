@@ -17,7 +17,7 @@
        (recur (+ position 4) (do-operation ({1 + 2 *} operation) position input))))))
 
 (defn load-intcode [filename]
-  (vec (map #(Integer/parseInt %) (clojure.string/split (slurp filename) #", "))))
+  (vec (map #(Integer/parseInt %) (clojure.string/split (clojure.string/trim (slurp filename)) #","))))
 
 (defn run-intcode [filename]
   (run (load-intcode filename)))

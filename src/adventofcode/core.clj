@@ -7,3 +7,12 @@
 
 (defn calc-fuel [filename]
   (fuel/total-fuel-required (file->vec filename)))
+
+(defn -main
+  [& args]
+  (println "---Day 2.1---")
+  (println (-> (intcode/load-intcode "intcode.txt")
+               (assoc 1 12)
+               (assoc 2 2)
+               (intcode/run)
+               (first))))
