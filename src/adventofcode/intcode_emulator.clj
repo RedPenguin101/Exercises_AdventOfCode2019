@@ -1,23 +1,23 @@
 (ns adventofcode.intcode-emulator)
 
-(defn loc-calc [operation-pos]
-  [(+ 1 operation-pos) (+ 2 operation-pos) (+ 3 operation-pos)])
+(defn get-instruction-params [instruction-pointer]
+  [(+ 1 instruction-pointer) (+ 2 instruction-pointer) (+ 3 instruction-pointer)])
 
-(defn do-operation [func operation-pos code]
-  (let [[x-loc y-loc replace-loc] (map code (loc-calc operation-pos))
-        [x y] (map code [x-loc y-loc])]
-    (assoc code replace-loc (func x y))))
+(defn do-instruction [func instruction-pointer memory]
+  (let [[param1 param2 param3] (map memory (get-instruction-params instruction-pointer))
+        [x y] (map memory [param1 param2])]
+    (assoc memory param3 (func x y))))
 
 (defn run
-  ([input] (run 0 input))
-  ([position input]
-   (let [operation (input position)]
-     (if (= operation 99)
-       input
-       (recur (+ position 4) (do-operation ({1 + 2 *} operation) position input))))))
+  ([memory] (run 0 memory))
+  ([instruction-pointer memory]
+   (let [opcode (memory instruction-pointer)]
+     (if (= opcode 99)
+       memory
+       (recur
+         (+ instruction-pointer 4)
+         (do-instruction ({1 + 2 *} opcode) instruction-pointer memory))))))
 
-(defn load-intcode [filename]
+(defn load-memory-state [filename]
   (vec (map #(Integer/parseInt %) (clojure.string/split (clojure.string/trim (slurp filename)) #","))))
 
-(defn run-intcode [filename]
-  (run (load-intcode filename)))

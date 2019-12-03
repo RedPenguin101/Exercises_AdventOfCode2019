@@ -11,7 +11,7 @@
 (defn -main
   [& args]
   (println "---Day 2.1---")
-  (println (-> (intcode/load-intcode "intcode.txt")
+  (println (-> (intcode/load-memory-state "intcode.txt")
                (assoc 1 12)
                (assoc 2 2)
                (intcode/run)

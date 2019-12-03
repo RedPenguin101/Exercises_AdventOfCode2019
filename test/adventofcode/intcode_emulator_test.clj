@@ -17,4 +17,4 @@
   "about loading int-code data"
   (fact
     "intcode test load"
-    (load-intcode "intcode_test.txt") => [0 1 2 3 4]))
+    (load-memory-state "intcode_test.txt") => [0 1 2 3 4]))
