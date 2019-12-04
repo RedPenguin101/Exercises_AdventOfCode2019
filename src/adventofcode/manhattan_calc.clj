@@ -1,4 +1,5 @@
-(ns adventofcode.manhattan-calc)
+(ns adventofcode.manhattan-calc
+  (:require clojure.set))
 
 (defn move [current-pos cmd]
   (let [[x y] current-pos
@@ -25,5 +26,15 @@
          (set path2))))
 
 (defn distance [point1 point2]
-  0)
+  (reduce + (map #(Math/abs (- %1 %2)) point1 point2)))
 
+(defn min-distance [points]
+  (apply min (map #(distance [0 0] %) points)))
+
+(defn path-distance-to [path point]
+  (inc (count (take-while #(not= % point) path))))
+
+(defn minimum-distance-to-intersections [path1 path2]
+  (apply min (for [intersection-point (find-intersections path1 path2)]
+         (+ (path-distance-to path1 intersection-point)
+            (path-distance-to path2 intersection-point)))))

@@ -1,6 +1,8 @@
 (ns adventofcode.core
   (:require [adventofcode.fuel-calculator :as fuel]
-            [adventofcode.intcode-emulator :as intcode]))
+            [adventofcode.intcode-emulator :as intcode]
+            [adventofcode.manhattan-calc :as m-calc]
+            ))
 
 (defn file->vec [filename]
   (vec (map #(Integer/parseInt %) (clojure.string/split (slurp filename) #"\n"))))
@@ -12,5 +14,17 @@
   [& args]
   (println "---Day 2.1---")
   (println (intcode/run-program 12 2 "intcode.txt"))
+
   (println "---Day 2.2---")
-  (println (intcode/find-output 19690720 "intcode.txt")))
+  (println (intcode/find-output 19690720 "intcode.txt"))
+
+  (println "---Day 3.1---")
+  (def paths (clojure.string/split-lines (slurp "day3.txt")))
+  (def path1 (m-calc/build-path (paths 0)))
+  (def path2 (m-calc/build-path (paths 1)))
+  (println (m-calc/min-distance (m-calc/find-intersections path1 path2)))
+
+  (println "---Day 3.2---")
+  (println (m-calc/minimum-distance-to-intersections path1 path2))
+  )
+
