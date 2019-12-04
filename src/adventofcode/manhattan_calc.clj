@@ -13,28 +13,24 @@
         "D" [x (- y step)]))))
 
 (defn build-path [cmd-string]
-  (drop
-    1
-    (reduce
-      (fn [old-path cmd]
-        (concat old-path (move (last old-path) cmd)))
-      [[0 0]] (clojure.string/split cmd-string #","))))
+  (drop 1 (reduce
+            (fn [old-path cmd]
+              (concat old-path (move (last old-path) cmd)))
+            [[0 0]] (clojure.string/split cmd-string #","))))
 
 (defn find-intersections [path1 path2]
-  (vec (clojure.set/intersection
-         (set path1)
-         (set path2))))
+  (vec (clojure.set/intersection (set path1) (set path2))))
 
 (defn distance [point1 point2]
   (reduce + (map #(Math/abs (- %1 %2)) point1 point2)))
 
-(defn min-distance [points]
+(defn min-man-distance [points]
   (apply min (map #(distance [0 0] %) points)))
 
 (defn path-distance-to [path point]
   (inc (count (take-while #(not= % point) path))))
 
-(defn minimum-distance-to-intersections [path1 path2]
+(defn min-path-distance [path1 path2]
   (apply min (for [intersection-point (find-intersections path1 path2)]
          (+ (path-distance-to path1 intersection-point)
             (path-distance-to path2 intersection-point)))))
