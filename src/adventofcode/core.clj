@@ -28,7 +28,7 @@
   ;;(println "---Day 3.2---")
   ;;(println (m-calc/min-path-distance path1 path2))
 
-  (println "---Day 4.1---")
+  (println "---Day 4.2---")
   (println (count (filter pwd/valid-code? (range 123257 647016))))
   )
 
