@@ -21,14 +21,6 @@
 
 (defmulti do-instruction dispatch-instruction)
 
-(defmethod do-instruction :comparator [program]
-  (let [memory (:mem program)
-        pointer (:pointer program)
-        [arg1 arg2 pos-to-change] (map memory (get-instruction-params pointer))
-        func ({7 < 8 =} (memory pointer))
-        new-pos-val (if (func arg1 arg2) 1 (memory pos-to-change))]
-    [(+ 4 pointer) (assoc memory pos-to-change new-pos-val)]))
-
 (defmethod do-instruction :jump-if [program]
   (let [memory (:mem program)
         pointer (:pointer program)
@@ -49,20 +41,32 @@
 (defmethod do-instruction :output [program]
   (let [memory (:mem program)
         [param-modes _] (deconstruct-opcode-value ((:mem program) (:pointer program)))
-        immed-mode (pos? (nth param-modes 0))
+        immed-mode? (pos? (nth param-modes 0))
         param (inc (:pointer program))
-        printloc (if immed-mode param (memory param))]
+        printloc (if immed-mode? param (memory param))]
     (println (memory printloc))
     [(+ (:pointer program) 2) memory]))
 
 (defmethod do-instruction :addmult [program]
   (let [memory (:mem program)
         [param-modes opcode] (deconstruct-opcode-value ((:mem program) (:pointer program)))
-        [pmode1 pmode2 _] (map #(= 1 %) param-modes)
+        [im-mode1? im-mode2? _] (map #(= 1 %) param-modes)
         [param1 param2 param3] (map memory (get-instruction-params (:pointer program)))
-        x (if pmode1 param1 (memory param1))
-        y (if pmode2 param2 (memory param2))]
+        x (if im-mode1? param1 (memory param1))
+        y (if im-mode2? param2 (memory param2))]
     [(+ 4 (:pointer program)) (assoc memory param3 (({1 + 2 *} opcode) x y))]))
+
+(defmethod do-instruction :comparator [program]
+  (let [memory (:mem program)
+        pointer (:pointer program)
+        [param-modes opcode] (deconstruct-opcode-value (memory pointer))
+        [im-mode1? im-mode2? _] (map #(= 1 %) param-modes)
+        [arg1 arg2 pos-to-change] (map memory (get-instruction-params pointer))
+        x (if im-mode1? arg1 (memory arg1))
+        y (if im-mode2? arg2 (memory arg2))
+        func ({7 < 8 =} opcode)
+        new-pos-val (if (func x y) 1 (memory pos-to-change))]
+    [(+ 4 pointer) (assoc memory pos-to-change new-pos-val)]))
 
 (defn run
   ([memory] (run 0 memory))
