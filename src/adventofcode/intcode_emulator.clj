@@ -12,49 +12,48 @@
    (+ 3 instruction-pointer)])
 
 (defn dispatch-instruction [program]
-  (cond
-    (<= (:opcode program) 2) :addmult
-    (= (:opcode program) 3) :input
-    (= (:opcode program) 4) :output
-    :else program))
+  (let [opcode ((deconstruct-opcode-value ((:mem program) (:pointer program))) 1)]
+    (cond
+      (<= opcode 2) :addmult
+      (= opcode 3) :input
+      (= opcode 4) :output
+      :else program)))
 
 (defmulti do-instruction dispatch-instruction)
 
 (defmethod do-instruction :input [program]
   (println "type your input")
   (let [input (Integer/parseInt (read-line))
-        memory (:memory program)
-        position (memory (inc (:instruction-pointer program)))]
-    (assoc memory position input)))
+        memory (:mem program)
+        position (memory (inc (:pointer program)))]
+    [(+ (:pointer program) 2) 
+     (assoc memory position input)]))
 
 (defmethod do-instruction :output [program]
-  (let [memory (:memory program)
-        immed-mode (pos? (nth (:param-modes program) 0))
-        param (inc (:instruction-pointer program))
+  (let [memory (:mem program)
+        [param-modes _] (deconstruct-opcode-value ((:mem program) (:pointer program)))
+        immed-mode (pos? (nth param-modes 0))
+        param (inc (:pointer program))
         printloc (if immed-mode param (memory param))]
     (println (memory printloc))
-    memory))
+    [(+ (:pointer program) 2) memory]))
 
 (defmethod do-instruction :addmult [program]
-  (let [memory (:memory program)
-        [pmode1 pmode2 _] (map #(= 1 %) (:param-modes program))
-        [param1 param2 param3] (map memory (get-instruction-params (:instruction-pointer program)))
+  (let [memory (:mem program)
+        [param-modes opcode] (deconstruct-opcode-value ((:mem program) (:pointer program)))
+        [pmode1 pmode2 _] (map #(= 1 %) param-modes)
+        [param1 param2 param3] (map memory (get-instruction-params (:pointer program)))
         x (if pmode1 param1 (memory param1))
         y (if pmode2 param2 (memory param2))]
-    (assoc memory param3 (({1 + 2 *} (:opcode program)) x y))))
+    [(+ 4 (:pointer program)) (assoc memory param3 (({1 + 2 *} opcode) x y))]))
 
 (defn run
   ([memory] (run 0 memory))
-  ([instruction-pointer memory]
-   (let [[param-modes opcode] (deconstruct-opcode-value (memory instruction-pointer))]
-     (if (= opcode 99)
-       memory
-       (recur
-         (+ instruction-pointer (if (<= opcode 2) 4 2))
-         (do-instruction {:opcode opcode
-                          :param-modes param-modes
-                          :instruction-pointer instruction-pointer
-                          :memory memory}))))))
+  ([instruction-pointer memory] 
+   (if (= (memory instruction-pointer) 99)
+     memory
+     (let [[new-instr new-mem] (do-instruction {:pointer instruction-pointer :mem memory})]
+       (recur new-instr new-mem)))))
 
 (defn load-memory-state [filename]
   (vec (map #(Integer/parseInt %) (clojure.string/split (clojure.string/trim (slurp filename)) #","))))
