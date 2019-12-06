@@ -49,12 +49,15 @@
 
 (defmethod do-instruction :addmult [program]
   (let [memory (:mem program)
-        [param-modes opcode] (deconstruct-opcode-value ((:mem program) (:pointer program)))
+        pointer (:pointer program)
+        [param-modes opcode] (deconstruct-opcode-value (memory pointer))
         [im-mode1? im-mode2? _] (map #(= 1 %) param-modes)
-        [param1 param2 param3] (map memory (get-instruction-params (:pointer program)))
-        x (if im-mode1? param1 (memory param1))
-        y (if im-mode2? param2 (memory param2))]
-    [(+ 4 (:pointer program)) (assoc memory param3 (({1 + 2 *} opcode) x y))]))
+        [arg1 arg2 pos-to-change] (map memory (get-instruction-params pointer))
+        x (if im-mode1? arg1 (memory arg1))
+        y (if im-mode2? arg2 (memory arg2))
+        func ({1 + 2 *} opcode)
+        new-pos-val (func x y)]
+    [(+ 4 pointer) (assoc memory pos-to-change new-pos-val)]))
 
 (defmethod do-instruction :comparator [program]
   (let [memory (:mem program)
