@@ -7,9 +7,7 @@
      opcode]))
 
 (defn get-instruction-params [instruction-pointer]
-  [(+ 1 instruction-pointer)
-   (+ 2 instruction-pointer)
-   (+ 3 instruction-pointer)])
+  (vec (range (+ 1 instruction-pointer) (+ 5 instruction-pointer))))
 
 (defn dispatch-instruction [program]
   (let [opcode ((deconstruct-opcode-value ((:mem program) (:pointer program))) 1)]
