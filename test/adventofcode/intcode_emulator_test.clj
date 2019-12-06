@@ -68,5 +68,21 @@
  (fact
   "opcode 5 jumps-if-true, does nothing if false"
   (run [5 0 5 99 1101 1 1 0 99]) => [5 0 5 99 1101 1 1 0 99]
-  (run [5 1 4 99 1101 1 1 0 99]) => [2 1 4 99 1101 1 1 0 99]
-  ))
+  (run [5 1 4 99 1101 1 1 0 99]) => [2 1 4 99 1101 1 1 0 99])
+ (fact
+  "opcode 6 jumps-if-false, does nothing if true"
+  (run [6 1 4 99 1101 1 1 0 99]) => [6 1 4 99 1101 1 1 0 99]
+  (run [6 0 4 99 1101 1 1 0 99]) => [2 0 4 99 1101 1 1 0 99]))
+
+(facts
+ "about less than and equal to opcodes"
+ (fact
+  "opcode 7 (less than): if 1st param is LT 2nd, stores 1 in pos given by param 3"
+  (run [7 2 1 0 99]) => [7 2 1 0 99]
+  (run [7 1 2 0 99]) => [1 1 2 0 99]
+  (run [7 1 1 0 99]) => [7 1 1 0 99])
+ (fact
+  "opcode 8 (equal to): if 1st param is = 2nd, stores 1 in pos given by param 3"
+  (run [8 2 1 0 99]) => [8 2 1 0 99]
+  (run [8 1 2 0 99]) => [8 1 2 0 99]
+  (run [8 1 1 0 99]) => [1 1 1 0 99]))

@@ -16,9 +16,18 @@
       (= opcode 3) :input
       (= opcode 4) :output
       (<= 5 opcode 6) :jump-if
+      (<= 7 opcode 8) :comparator
       :else program)))
 
 (defmulti do-instruction dispatch-instruction)
+
+(defmethod do-instruction :comparator [program]
+  (let [memory (:mem program)
+        pointer (:pointer program)
+        [arg1 arg2 pos-to-change] (map memory (get-instruction-params pointer))
+        func ({7 < 8 =} (memory pointer))
+        new-pos-val (if (func arg1 arg2) 1 (memory pos-to-change))]
+    [(+ 4 pointer) (assoc memory pos-to-change new-pos-val)]))
 
 (defmethod do-instruction :jump-if [program]
   (let [memory (:mem program)
@@ -26,9 +35,8 @@
         jump-if-true? (= 5 (memory pointer))
         is-true? (not= 0 (memory (inc pointer)))
         jump? (= jump-if-true? is-true?)
-        jump-to (memory (+ 2 pointer))
-        new-instr (if jump? jump-to (+ pointer 3))]
-    [new-instr memory]))
+        jump-to (memory (+ 2 pointer))]
+    [(if jump? jump-to (+ pointer 3)) memory]))
 
 (defmethod do-instruction :input [program]
   (println "type your input")
