@@ -27,6 +27,7 @@
     ((deconstruct-opcode-value 102) 1) => 2
     ((deconstruct-opcode-value 1102) 1) => 2
     ((deconstruct-opcode-value 11102) 1) => 2
+    ((deconstruct-opcode-value 11199) 1) => 99
     ((deconstruct-opcode-value 10002) 1) => 2)
   (fact
     "the parameters deconstruct into 3 parameters"
@@ -37,3 +38,8 @@
     ((deconstruct-opcode-value 11102) 0) => [1 1 1]
     ((deconstruct-opcode-value 10002) 0) => [0 0 1]
     ((deconstruct-opcode-value 10102) 0) => [1 0 1]))
+
+(facts
+  "about running programs with long opcodes"
+  (future-fact "long opcodes with immediate mode and add / mult only"
+        (run [1002 4 3 5 99 0]) => [1002 4 3 5 99 297]))
