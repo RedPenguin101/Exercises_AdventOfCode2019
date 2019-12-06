@@ -7,16 +7,25 @@
      opcode]))
 
 (defn get-instruction-params [instruction-pointer]
-  [(+ 1 instruction-pointer) (+ 2 instruction-pointer) (+ 3 instruction-pointer)])
+  [(+ 1 instruction-pointer)
+   (+ 2 instruction-pointer)
+   (+ 3 instruction-pointer)])
 
 (defn dispatch-instruction [program]
   (cond
     (<= (:opcode program) 2) :addmult
+    (= (:opcode program) 3) :input
     (= (:opcode program) 4) :output
-    :else program
-    ))
+    :else program))
 
 (defmulti do-instruction dispatch-instruction)
+
+(defmethod do-instruction :input [program]
+  (println "type your input")
+  (let [input (Integer/parseInt (read-line))
+        memory (:memory program)
+        position (memory (inc (:instruction-pointer program)))]
+    (assoc memory position input)))
 
 (defmethod do-instruction :output [program]
   (let [memory (:memory program)
