@@ -78,24 +78,23 @@
  "about less than and equal to opcodes in immediate mode"
  (fact
   "opcode 7 (less than): if 1st param is LT 2nd, stores 1 in pos given by param 3"
-  (run [1107 2 1 0 99]) => [1107 2 1 0 99]
+  (run [1107 2 1 0 99]) => [0 2 1 0 99]
   (run [1107 1 2 0 99]) => [1 1 2 0 99]
-  (run [1107 1 1 0 99]) => [1107 1 1 0 99])
  (fact
   "opcode 8 (equal to): if 1st param is = 2nd, stores 1 in pos given by param 3"
-  (run [1108 2 1 0 99]) => [1108 2 1 0 99]
-  (run [1108 1 2 0 99]) => [1108 1 2 0 99]
-  (run [1108 1 1 0 99]) => [1 1 1 0 99]))
+  (run [1108 2 1 0 99]) => [0 2 1 0 99]
+  (run [1108 1 2 0 99]) => [0 1 2 0 99]
+  (run [1108 1 1 0 99]) => [1 1 1 0 99])))
 
 (facts
  "about less than and equal to opcodes in position mode"
  (fact
   "opcode 7 (less than): if 1st param is LT 2nd, stores 1 in pos given by param 3"
-  (run [7 5 6 0 99 2 1]) => [7 5 6 0 99 2 1]
+  (run [7 5 6 0 99 2 1]) => [0 5 6 0 99 2 1]
   (run [7 5 6 0 99 1 2]) => [1 5 6 0 99 1 2]
-  (run [7 5 6 0 99 1 1]) => [7 5 6 0 99 1 1])
+  (run [7 5 6 0 99 1 1]) => [0 5 6 0 99 1 1])
  (fact
   "opcode 8 (equal to): if 1st param is = 2nd, stores 1 in pos given by param 3"
-  (run [8 5 6 0 99 2 1]) => [8 5 6 0 99 2 1]
-  (run [8 5 6 0 99 1 2]) => [8 5 6 0 99 1 2]
+  (run [8 5 6 0 99 2 1]) => [0 5 6 0 99 2 1]
+  (run [8 5 6 0 99 1 2]) => [0 5 6 0 99 1 2]
   (run [8 5 6 0 99 1 1]) => [1 5 6 0 99 1 1]))

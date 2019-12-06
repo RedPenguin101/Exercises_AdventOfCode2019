@@ -68,7 +68,7 @@
         x (if im-mode1? arg1 (memory arg1))
         y (if im-mode2? arg2 (memory arg2))
         func ({7 < 8 =} opcode)
-        new-pos-val (if (func x y) 1 (memory pos-to-change))]
+        new-pos-val (if (func x y) 1 0)]
     [(+ 4 pointer) (assoc memory pos-to-change new-pos-val)]))
 
 (defn run
