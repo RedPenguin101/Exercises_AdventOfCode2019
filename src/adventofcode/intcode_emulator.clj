@@ -15,15 +15,17 @@
       (<= opcode 2) :addmult
       (= opcode 3) :input
       (= opcode 4) :output
-      (= opcode 5) :jump-if-true
+      (<= 5 opcode 6) :jump-if
       :else program)))
 
 (defmulti do-instruction dispatch-instruction)
 
-(defmethod do-instruction :jump-if-true [program]
+(defmethod do-instruction :jump-if [program]
   (let [memory (:mem program)
         pointer (:pointer program)
-        jump? (not= 0 (memory (inc pointer)))
+        jump-if-true? (= 5 (memory pointer))
+        is-true? (not= 0 (memory (inc pointer)))
+        jump? (= jump-if-true? is-true?)
         jump-to (memory (+ 2 pointer))
         new-instr (if jump? jump-to (+ pointer 3))]
     [new-instr memory]))
