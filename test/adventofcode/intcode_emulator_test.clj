@@ -38,6 +38,7 @@
     ((deconstruct-opcode-value 1102) 0) => [1 1 0]
     ((deconstruct-opcode-value 11102) 0) => [1 1 1]
     ((deconstruct-opcode-value 10002) 0) => [0 0 1]
+    ((deconstruct-opcode-value 104) 0) => [1 0 0]
     ((deconstruct-opcode-value 10102) 0) => [1 0 1]))
 
 (facts
@@ -48,7 +49,17 @@
 
 (facts
   "about printing output (opcode4)"
-  (fact "without any position modes"
+  (fact
+    "without any position modes"
+    (println "expect 123")
     (run [4 3 99 123]) => [4 3 99 123]
-    (run [4 7 4 8 4 9 99 1 2 3])))
+    (println "expect 1 2 3")
+    (run [4 7 4 8 4 9 99 1 2 3]) => [4 7 4 8 4 9 99 1 2 3])
+  (fact
+    "with posmode"
+    (println "expect 3")
+    (run [104 3 99 123]) => [104 3 99 123]
+    (println "expect 7 8 9")
+    (run [104 7 104 8 104 9 99 1 2 3]) => [104 7 104 8 104 9 99 1 2 3])
+        )
 

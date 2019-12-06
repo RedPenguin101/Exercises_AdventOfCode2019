@@ -19,8 +19,12 @@
 (defmulti do-instruction dispatch-instruction)
 
 (defmethod do-instruction :output [program]
-  (println ((:memory program) (inc (:instruction-pointer program))))
-  (:memory program))
+  (let [memory (:memory program)
+        immed-mode (pos? (nth (:param-modes program) 0))
+        param (inc (:instruction-pointer program))
+        printloc (if immed-mode param (memory param))]
+    (println (memory printloc))
+    memory))
 
 (defmethod do-instruction :addmult [program]
   (let [memory (:memory program)
