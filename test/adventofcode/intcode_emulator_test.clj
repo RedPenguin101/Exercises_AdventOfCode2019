@@ -24,6 +24,7 @@
   (fact
     "the opcode is desconstructed into an opcode"
     ((deconstruct-opcode-value 2) 1) => 2
+    ((deconstruct-opcode-value 99) 1) => 99
     ((deconstruct-opcode-value 102) 1) => 2
     ((deconstruct-opcode-value 1102) 1) => 2
     ((deconstruct-opcode-value 11102) 1) => 2
@@ -42,6 +43,12 @@
 (facts
   "about running programs with long opcodes"
   (fact "long opcodes with different modes and add / mult only"
-        (run [1002 4 3 5 99 0]) => [1002 4 3 5 99 297]))
+        (run [1002 4 3 5 99 0]) => [1002 4 3 5 99 297]
+        (run [1101 4 3 5 99 0]) => [1101 4 3 5 99 7]))
 
-(fact "autotest can screw me sometimes" 1 => 3)
+(facts
+  "about printing output (opcode4)"
+  (fact "without any position modes"
+    (run [4 3 99 123]) => [4 3 99 123]
+    (run [4 7 4 8 4 9 99 1 2 3])))
+

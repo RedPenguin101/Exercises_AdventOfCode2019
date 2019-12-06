@@ -12,9 +12,15 @@
 (defn dispatch-instruction [program]
   (cond
     (<= (:opcode program) 2) :addmult
+    (= (:opcode program) 4) :output
+    :else program
     ))
 
 (defmulti do-instruction dispatch-instruction)
+
+(defmethod do-instruction :output [program]
+  (println ((:memory program) (inc (:instruction-pointer program))))
+  (:memory program))
 
 (defmethod do-instruction :addmult [program]
   (let [memory (:memory program)
@@ -31,7 +37,7 @@
      (if (= opcode 99)
        memory
        (recur
-         (+ instruction-pointer 4)
+         (+ instruction-pointer (if (<= opcode 2) 4 2))
          (do-instruction {:opcode opcode
                           :param-modes param-modes
                           :instruction-pointer instruction-pointer
