@@ -41,5 +41,7 @@
 
 (facts
   "about running programs with long opcodes"
-  (future-fact "long opcodes with different modes and add / mult only"
+  (fact "long opcodes with different modes and add / mult only"
         (run [1002 4 3 5 99 0]) => [1002 4 3 5 99 297]))
+
+(fact "autotest can screw me sometimes" 1 => 3)

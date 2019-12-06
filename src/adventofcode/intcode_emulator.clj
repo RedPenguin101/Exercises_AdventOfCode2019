@@ -18,8 +18,10 @@
 
 (defmethod do-instruction :addmult [program]
   (let [memory (:memory program)
+        [pmode1 pmode2 _] (map #(= 1 %) (:param-modes program))
         [param1 param2 param3] (map memory (get-instruction-params (:instruction-pointer program)))
-        [x y] (map memory [param1 param2])]
+        x (if pmode1 param1 (memory param1))
+        y (if pmode2 param2 (memory param2))]
     (assoc memory param3 (({1 + 2 *} (:opcode program)) x y))))
 
 (defn run
