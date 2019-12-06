@@ -18,3 +18,22 @@
   (fact
     "intcode test load"
     (load-memory-state "intcode_test.txt") => [0 1 2 3 4]))
+
+(facts
+  "about desconstructing the opcode"
+  (fact
+    "the opcode is desconstructed into an opcode"
+    ((deconstruct-opcode-value 2) 1) => 2
+    ((deconstruct-opcode-value 102) 1) => 2
+    ((deconstruct-opcode-value 1102) 1) => 2
+    ((deconstruct-opcode-value 11102) 1) => 2
+    ((deconstruct-opcode-value 10002) 1) => 2)
+  (fact
+    "the parameters deconstruct into 3 parameters"
+    ((deconstruct-opcode-value 2) 0) => [0 0 0]
+    ((deconstruct-opcode-value 102) 0) => [1 0 0]
+    ((deconstruct-opcode-value 1002) 0) => [0 1 0]
+    ((deconstruct-opcode-value 1102) 0) => [1 1 0]
+    ((deconstruct-opcode-value 11102) 0) => [1 1 1]
+    ((deconstruct-opcode-value 10002) 0) => [0 0 1]
+    ((deconstruct-opcode-value 10102) 0) => [1 0 1]))

@@ -1,5 +1,11 @@
 (ns adventofcode.intcode-emulator)
 
+(defn deconstruct-opcode-value [number]
+  (let [param-vals (quot number 100)
+        opcode (- number (* param-vals 100))]
+    [(reverse (map #(Character/digit % 10) (format "%03d" param-vals)))
+     opcode]))
+
 (defn get-instruction-params [instruction-pointer]
   [(+ 1 instruction-pointer) (+ 2 instruction-pointer) (+ 3 instruction-pointer)])
 
