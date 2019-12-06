@@ -63,3 +63,10 @@
     (run [104 7 104 8 104 9 99 1 2 3]) => [104 7 104 8 104 9 99 1 2 3])
         )
 
+(facts
+ "about conditionals"
+ (fact
+  "opcode 5 jumps-if-true, does nothing if false"
+  (run [5 0 5 99 1101 1 1 0 99]) => [5 0 5 99 1101 1 1 0 99]
+  (run [5 1 4 99 1101 1 1 0 99]) => [2 1 4 99 1101 1 1 0 99]
+  ))
