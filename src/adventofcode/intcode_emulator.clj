@@ -11,7 +11,7 @@
 
 (defn dispatch-instruction [program]
   (cond
-    (<= 2 (:opcode program)) :addmult
+    (<= (:opcode program) 2) :addmult
     ))
 
 (defmulti do-instruction dispatch-instruction)

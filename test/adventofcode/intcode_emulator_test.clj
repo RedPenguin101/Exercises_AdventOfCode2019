@@ -41,5 +41,5 @@
 
 (facts
   "about running programs with long opcodes"
-  (future-fact "long opcodes with immediate mode and add / mult only"
+  (future-fact "long opcodes with different modes and add / mult only"
         (run [1002 4 3 5 99 0]) => [1002 4 3 5 99 297]))
