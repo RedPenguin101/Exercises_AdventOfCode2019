@@ -21,3 +21,8 @@
     (path-length :L {:B :COM :C :B :D :C :E :D :F :E :G :B :H :G :I :D :J :E :K :J :L :K}) => 7
     (orbit-checksum {:B :COM :C :B :D :C :E :D :F :E :G :B :H :G :I :D :J :E :K :J :L :K}) => 42
     ))
+
+(facts "about finding common orbit"
+       (find-common-orbit :L :I {:B :COM :C :B :D :C :E :D :F :E :G :B :H :G :I :D :J :E :K :J :L :K}) => :D
+       (calculate-jumps :K :I {:B :COM :C :B :D :C :E :D :F :E :G :B :H :G :I :D :J :E :K :J :L :K}) => 2
+       (calculate-jumps :YOU :SAN {:B :COM :C :B :D :C :E :D :F :E :G :B :H :G :I :D :J :E :K :J :L :K :YOU :K :SAN :I}) => 4)
