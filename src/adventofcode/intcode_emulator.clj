@@ -24,11 +24,15 @@
 (defmethod do-instruction :jump-if [program]
   (let [memory (:mem program)
         pointer (:pointer program)
-        jump-if-true? (= 5 (memory pointer))
-        is-true? (not= 0 (memory (inc pointer)))
-        jump? (= jump-if-true? is-true?)
-        jump-to (memory (+ 2 pointer))]
-    [(if jump? jump-to (+ pointer 3)) memory]))
+        [param-modes opcode] (deconstruct-opcode-value (memory pointer))
+        jump-if-true? (= 5 opcode)
+        [im-mode1? im-mode2? _] (map #(= 1 %) param-modes)
+        [arg1 arg2 _] (map memory (get-instruction-params pointer))
+        x (if im-mode1? arg1 (memory arg1))
+        jump-to (if im-mode2? arg2 (memory arg2))
+        is-true? (not= 0 x)
+        jump? (= jump-if-true? is-true?)]
+    [(if jump? jump-to (+ 3 pointer)) memory]))
 
 (defmethod do-instruction :input [program]
   (println "type your input")
@@ -73,7 +77,7 @@
 
 (defn run
   ([memory] (run 0 memory))
-  ([instruction-pointer memory] 
+  ([instruction-pointer memory]
    (if (= (memory instruction-pointer) 99)
      memory
      (let [[new-instr new-mem] (do-instruction {:pointer instruction-pointer :mem memory})]

@@ -64,15 +64,31 @@
         )
 
 (facts
- "about conditionals"
+ "about conditionals in position mode"
  (fact
   "opcode 5 jumps-if-true, does nothing if false"
-  (run [5 0 5 99 1101 1 1 0 99]) => [5 0 5 99 1101 1 1 0 99]
-  (run [5 1 4 99 1101 1 1 0 99]) => [2 1 4 99 1101 1 1 0 99])
+  (run [5 9 10 99 1101 1 1 0 99 0 4]) => [5 9 10 99 1101 1 1 0 99 0 4]
+  (run [5 9 10 99 1101 1 1 0 99 1 4]) => [2 9 10 99 1101 1 1 0 99 1 4])
  (fact
   "opcode 6 jumps-if-false, does nothing if true"
-  (run [6 1 4 99 1101 1 1 0 99]) => [6 1 4 99 1101 1 1 0 99]
-  (run [6 0 4 99 1101 1 1 0 99]) => [2 0 4 99 1101 1 1 0 99]))
+  (run [6 9 10 99 1101 1 1 0 99 1 4]) => [6 9 10 99 1101 1 1 0 99 1 4]
+  (run [6 9 10 99 1101 1 1 0 99 0 4]) => [2 9 10 99 1101 1 1 0 99 0 4]))
+
+
+(facts
+ "about conditionals in immediate mode"
+ (fact
+  "opcode 5 jumps-if-true, does nothing if false"
+  (run [105 0 9 99 1101 1 1 0 99 4]) => [105 0 9 99 1101 1 1 0 99 4]
+  (run [105 1 9 99 1101 1 1 0 99 4]) => [2 1 9 99 1101 1 1 0 99 4]
+  (run [1105 0 5 99 1101 1 1 0 99]) => [1105 0 5 99 1101 1 1 0 99]
+  (run [1105 1 4 99 1101 1 1 0 99]) => [2 1 4 99 1101 1 1 0 99])
+ (fact
+  "opcode 6 jumps-if-false, does nothing if true"
+  (run [106 1 9 99 1101 1 1 0 99 4]) => [106 1 9 99 1101 1 1 0 99 4]
+  (run [106 0 9 99 1101 1 1 0 99 4]) => [2 0 9 99 1101 1 1 0 99 4]
+  (run [1106 1 4 99 1101 1 1 0 99]) => [1106 1 4 99 1101 1 1 0 99]
+  (run [1106 0 4 99 1101 1 1 0 99]) => [2 0 4 99 1101 1 1 0 99]))
 
 (facts
  "about less than and equal to opcodes in immediate mode"
