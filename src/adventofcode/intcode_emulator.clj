@@ -8,35 +8,35 @@
 (defn get-instruction-params [instruction-pointer]
   (vec (range (+ 1 instruction-pointer) (+ 4 instruction-pointer))))
 
-(defn dispatch-instruction [{:keys [pointer memory]}]
+(defn dispatch-instruction [pointer memory]
   (let [opcode ((deconstruct-opcode-value (memory pointer)) 1)]
     (cond
-      (<= opcode 2) :addmultcomp
+      (<= opcode 2)   :addmultcomp
       (<= 7 opcode 8) :addmultcomp
-      (= opcode 3) :input
-      (= opcode 4) :output
+      (= opcode 3)    :input
+      (= opcode 4)    :output
       (<= 5 opcode 6) :jump-if)))
 
 (defmulti do-instruction dispatch-instruction)
 
-(defmethod do-instruction :input [{:keys [pointer memory]}]
+(defmethod do-instruction :input [pointer memory]
   (println "type your input")
   [(+ pointer 2) (assoc memory (memory (inc pointer)) (Integer/parseInt (read-line)))])
 
-(defmethod do-instruction :output [{:keys [pointer memory]}]
+(defmethod do-instruction :output [pointer memory]
   (let [[param-modes] (deconstruct-opcode-value (memory pointer))
         param (inc pointer)
         printloc (if (pos? (nth param-modes 0)) param (memory param))]
     (println (memory printloc))
     [(+ pointer 2) memory]))
 
-(defmethod do-instruction :jump-if [{:keys [pointer memory]}]
+(defmethod do-instruction :jump-if [pointer memory]
   (let [[param-modes opcode] (deconstruct-opcode-value (memory pointer))
         immediate_modes (map #(= 1 %) param-modes)
         args (map memory (get-instruction-params pointer))
-        [x jump-to] (map #(if %1 %2 (memory %2)) immediate_modes args)
+        [x jump-to-pos] (map #(if %1 %2 (memory %2)) immediate_modes args)
         jump? (= (= 5 opcode) (not= 0 x))]
-    [(if jump? jump-to (+ 3 pointer)) memory]))
+    [(if jump? jump-to-pos (+ 3 pointer)) memory]))
 
 (defn calc-new-pos-value [pointer memory]
   (let [[param-modes opcode] (deconstruct-opcode-value (memory pointer))
@@ -49,7 +49,7 @@
       false 0
       new-pos-value)))
 
-(defmethod do-instruction :addmultcomp [{:keys [pointer memory]}]
+(defmethod do-instruction :addmultcomp [pointer memory]
   [(+ 4 pointer) (assoc memory (memory (+ 3 pointer)) (calc-new-pos-value pointer memory))])
 
 (defn run
@@ -57,7 +57,7 @@
   ([instruction-pointer memory]
    (if (= (memory instruction-pointer) 99)
      memory
-     (let [[new-instr new-mem] (do-instruction {:pointer instruction-pointer :memory memory})]
+     (let [[new-instr new-mem] (do-instruction instruction-pointer memory)]
        (recur new-instr new-mem)))))
 
 (defn load-memory-state [filename]
