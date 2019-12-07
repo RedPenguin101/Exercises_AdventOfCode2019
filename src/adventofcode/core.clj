@@ -3,6 +3,7 @@
             [adventofcode.intcode-emulator :as intcode]
             [adventofcode.manhattan-calc :as m-calc]
             [adventofcode.password-crack :as pwd]
+            [adventofcode.orbit-checksum :as orbit]
             ))
 
 (defn file->vec [filename]
@@ -30,6 +31,9 @@
   
   ;;(println "---Day 4.2---")
   ;;(println (count (filter pwd/valid-code? (range 123257 647016))))
-  (println "---Day 5.1---")
-  (intcode/run (intcode/load-memory-state "day5.txt"))
+  ;;(println "---Day 5.1---")
+  ;;(intcode/run (intcode/load-memory-state "day5.txt"))
+
+  (println "=== Day 6.1 ===")
+  (orbit/orbit-checksum (orbit/load-orbit-file "day6.txt"))
   )
