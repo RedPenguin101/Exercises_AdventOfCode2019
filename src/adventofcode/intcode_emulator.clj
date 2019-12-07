@@ -3,84 +3,61 @@
 (defn deconstruct-opcode-value [number]
   (let [param-vals (quot number 100)
         opcode (- number (* param-vals 100))]
-    [(reverse (map #(Character/digit % 10) (format "%03d" param-vals)))
-     opcode]))
+    [(reverse (map #(Character/digit % 10) (format "%03d" param-vals))) opcode]))
 
 (defn get-instruction-params [instruction-pointer]
-  (vec (range (+ 1 instruction-pointer) (+ 5 instruction-pointer))))
+  (vec (range (+ 1 instruction-pointer) (+ 4 instruction-pointer))))
 
-(defn dispatch-instruction [program]
-  (let [opcode ((deconstruct-opcode-value ((:mem program) (:pointer program))) 1)]
+(defn dispatch-instruction [{:keys [memory pointer]}]
+  (let [opcode ((deconstruct-opcode-value (memory pointer)) 1)]
     (cond
-      (<= opcode 2) :addmult
+      (<= opcode 2) :addmultcomp
+      (<= 7 opcode 8) :addmultcomp
       (= opcode 3) :input
       (= opcode 4) :output
-      (<= 5 opcode 6) :jump-if
-      (<= 7 opcode 8) :comparator
-      :else program)))
+      (<= 5 opcode 6) :jump-if)))
 
 (defmulti do-instruction dispatch-instruction)
 
-(defmethod do-instruction :jump-if [program]
-  (let [memory (:mem program)
-        pointer (:pointer program)
-        [param-modes opcode] (deconstruct-opcode-value (memory pointer))
-        jump-if-true? (= 5 opcode)
-        [im-mode1? im-mode2? _] (map #(= 1 %) param-modes)
-        [arg1 arg2 _] (map memory (get-instruction-params pointer))
-        x (if im-mode1? arg1 (memory arg1))
-        jump-to (if im-mode2? arg2 (memory arg2))
-        is-true? (not= 0 x)
-        jump? (= jump-if-true? is-true?)]
+(defmethod do-instruction :input [{:keys [memory pointer]}]
+  (println "type your input")
+  [(+ pointer 2) (assoc memory (memory (inc pointer)) (Integer/parseInt (read-line)))])
+
+(defmethod do-instruction :output [{:keys [memory pointer]}]
+  (let [[param-modes] (deconstruct-opcode-value (memory pointer))
+        param (inc pointer)
+        printloc (if (pos? (nth param-modes 0)) param (memory param))]
+    (println (memory printloc))
+    [(+ pointer 2) memory]))
+
+(defmethod do-instruction :jump-if [{:keys [memory pointer]}]
+  (let [[param-modes opcode] (deconstruct-opcode-value (memory pointer))
+        immediate_modes (map #(= 1 %) param-modes)
+        args (map memory (get-instruction-params pointer))
+        [x jump-to] (map #(if %1 %2 (memory %2)) immediate_modes args)
+        jump? (= (= 5 opcode) (not= 0 x))]
     [(if jump? jump-to (+ 3 pointer)) memory]))
 
-(defmethod do-instruction :input [program]
-  (println "type your input")
-  (let [input (Integer/parseInt (read-line))
-        memory (:mem program)
-        position (memory (inc (:pointer program)))]
-    [(+ (:pointer program) 2) 
-     (assoc memory position input)]))
+(defn calc-new-pos-value [memory pointer]
+  (let [[param-modes opcode] (deconstruct-opcode-value (memory pointer))
+        immediate-modes (take 2 (map #(= 1 %) param-modes))
+        args (map memory (get-instruction-params pointer))
+        func ({1 + 2 * 7 < 8 =} opcode)
+        new-pos-value (apply func (map #(if %1 %2 (memory %2)) immediate-modes args))]
+    (case new-pos-value
+      true 1
+      false 0
+      new-pos-value)))
 
-(defmethod do-instruction :output [program]
-  (let [memory (:mem program)
-        [param-modes _] (deconstruct-opcode-value ((:mem program) (:pointer program)))
-        immed-mode? (pos? (nth param-modes 0))
-        param (inc (:pointer program))
-        printloc (if immed-mode? param (memory param))]
-    (println (memory printloc))
-    [(+ (:pointer program) 2) memory]))
-
-(defmethod do-instruction :addmult [program]
-  (let [memory (:mem program)
-        pointer (:pointer program)
-        [param-modes opcode] (deconstruct-opcode-value (memory pointer))
-        [im-mode1? im-mode2? _] (map #(= 1 %) param-modes)
-        [arg1 arg2 pos-to-change] (map memory (get-instruction-params pointer))
-        x (if im-mode1? arg1 (memory arg1))
-        y (if im-mode2? arg2 (memory arg2))
-        func ({1 + 2 *} opcode)
-        new-pos-val (func x y)]
-    [(+ 4 pointer) (assoc memory pos-to-change new-pos-val)]))
-
-(defmethod do-instruction :comparator [program]
-  (let [memory (:mem program)
-        pointer (:pointer program)
-        [param-modes opcode] (deconstruct-opcode-value (memory pointer))
-        [im-mode1? im-mode2? _] (map #(= 1 %) param-modes)
-        [arg1 arg2 pos-to-change] (map memory (get-instruction-params pointer))
-        x (if im-mode1? arg1 (memory arg1))
-        y (if im-mode2? arg2 (memory arg2))
-        func ({7 < 8 =} opcode)
-        new-pos-val (if (func x y) 1 0)]
-    [(+ 4 pointer) (assoc memory pos-to-change new-pos-val)]))
+(defmethod do-instruction :addmultcomp [{:keys [memory pointer]}]
+  [(+ 4 pointer) (assoc memory (memory (+ 3 pointer)) (calc-new-pos-value memory pointer))])
 
 (defn run
   ([memory] (run 0 memory))
   ([instruction-pointer memory]
    (if (= (memory instruction-pointer) 99)
      memory
-     (let [[new-instr new-mem] (do-instruction {:pointer instruction-pointer :mem memory})]
+     (let [[new-instr new-mem] (do-instruction {:pointer instruction-pointer :memory memory})]
        (recur new-instr new-mem)))))
 
 (defn load-memory-state [filename]
@@ -98,4 +75,4 @@
         verb (range 100)
         :let [result (run-program noun verb filename)]
         :when (= output result)]
-    {:result result :noun noun :verb verb :noun-verb-comb (+ (* 100 noun) verb)}))
+    result))
