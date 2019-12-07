@@ -8,7 +8,7 @@
 (defn get-instruction-params [instruction-pointer]
   (vec (range (+ 1 instruction-pointer) (+ 4 instruction-pointer))))
 
-(defn dispatch-instruction [{:keys [memory pointer]}]
+(defn dispatch-instruction [{:keys [pointer memory]}]
   (let [opcode ((deconstruct-opcode-value (memory pointer)) 1)]
     (cond
       (<= opcode 2) :addmultcomp
@@ -19,18 +19,18 @@
 
 (defmulti do-instruction dispatch-instruction)
 
-(defmethod do-instruction :input [{:keys [memory pointer]}]
+(defmethod do-instruction :input [{:keys [pointer memory]}]
   (println "type your input")
   [(+ pointer 2) (assoc memory (memory (inc pointer)) (Integer/parseInt (read-line)))])
 
-(defmethod do-instruction :output [{:keys [memory pointer]}]
+(defmethod do-instruction :output [{:keys [pointer memory]}]
   (let [[param-modes] (deconstruct-opcode-value (memory pointer))
         param (inc pointer)
         printloc (if (pos? (nth param-modes 0)) param (memory param))]
     (println (memory printloc))
     [(+ pointer 2) memory]))
 
-(defmethod do-instruction :jump-if [{:keys [memory pointer]}]
+(defmethod do-instruction :jump-if [{:keys [pointer memory]}]
   (let [[param-modes opcode] (deconstruct-opcode-value (memory pointer))
         immediate_modes (map #(= 1 %) param-modes)
         args (map memory (get-instruction-params pointer))
@@ -38,7 +38,7 @@
         jump? (= (= 5 opcode) (not= 0 x))]
     [(if jump? jump-to (+ 3 pointer)) memory]))
 
-(defn calc-new-pos-value [memory pointer]
+(defn calc-new-pos-value [pointer memory]
   (let [[param-modes opcode] (deconstruct-opcode-value (memory pointer))
         immediate-modes (take 2 (map #(= 1 %) param-modes))
         args (map memory (get-instruction-params pointer))
@@ -49,8 +49,8 @@
       false 0
       new-pos-value)))
 
-(defmethod do-instruction :addmultcomp [{:keys [memory pointer]}]
-  [(+ 4 pointer) (assoc memory (memory (+ 3 pointer)) (calc-new-pos-value memory pointer))])
+(defmethod do-instruction :addmultcomp [{:keys [pointer memory]}]
+  [(+ 4 pointer) (assoc memory (memory (+ 3 pointer)) (calc-new-pos-value pointer memory))])
 
 (defn run
   ([memory] (run 0 memory))
