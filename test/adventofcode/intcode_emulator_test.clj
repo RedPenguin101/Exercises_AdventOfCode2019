@@ -131,10 +131,26 @@
   (:memory (run (build-program [8 5 6 0 99 1 2]))) => [0 5 6 0 99 1 2]
   (:memory (run (build-program [8 5 6 0 99 1 1]))) => [1 5 6 0 99 1 1]))
 
-
 (facts
+  "about passing a queue of inputs to a program"
+
+  (fact
+    "When given a list input with a single value, the input
+    is used and put where the parameter instruct it"
+    (:output (run {:pointer 0 :memory [3 5 4 5 99 -1] :inputs [10]}))
+    => 10)
+
+  (fact
+    "When given a list input with multiple values, those inputs
+    are used sequentially"
+    (:memory (run {:pointer 0
+                   :memory  [3 5 3 6 99 -1 -2]
+                   :inputs  [10 11]}))
+    => [3 5 3 6 99 10 11]))
+
+(future-facts
   "About accepting phases"
-(fact
+  (fact
     "add phase values"
     (add-phases (build-program [1 0 0 0 99]) [0 1 2 3 4]) => {:pointer 0 :memory [1 0 0 0 99] :current-phase 0 :phases [0 1 2 3 4]})
 
@@ -147,7 +163,6 @@
 
   (fact
     "about running with phases"
-    (println "expect 43210")
     (run-with-phases
       [3,15,3,16,1002,16,10,16,1,16,15,15,4,15,99,0,0]
       [4 3 2 1 0])))

@@ -44,14 +44,16 @@
 
 
 (defmethod do-instruction :input [program]
+  "If the :inputs value of the program has instructions, it uses
+  the first input. Otherwise it asks the user for input"
 
-  (let [{:keys [pointer memory current-phase phases]} program
-        input-val (if phases
-                    (phases current-phase)
+  (let [{:keys [pointer memory inputs]} program
+        input-val (if (pos? (count inputs))
+                    (first inputs)
                     (do (println "type your input") (Integer/parseInt (read-line))))]
 
     (assoc-in
-      (assoc program :pointer (+ 2 pointer))
+      (assoc program :pointer (+ 2 pointer) :inputs (drop 1 inputs))
       [:memory (memory (+ 1 pointer))]
       input-val)))
 
@@ -100,6 +102,9 @@
   (if (= ((:memory program) (:pointer program)) 99)
     program
     (recur (do-instruction program))))
+
+(defn build-and-run [memory]
+  (run (build-program memory)))
 
 (defn run-with-noun-verb [noun verb filename]
   (-> (load-memory-state filename)
