@@ -35,24 +35,30 @@
     (assoc-in
       (assoc program :pointer (+ 4 pointer))
       [:memory (memory (+ 3 pointer))]
-      (calc-new-pos-value program)))
-  )
+      (calc-new-pos-value program))))
 
 (defmethod do-instruction :input [program]
-  (println "type your input")
-  (let [{:keys [pointer memory]} program]
+
+  (let [{:keys [pointer memory current-phase phases]} program
+        input-val (if phases
+                    (phases current-phase)
+                    (do (println "type your input") (Integer/parseInt (read-line))))]
+
     (assoc-in
       (assoc program :pointer (+ 2 pointer))
       [:memory (memory (+ 1 pointer))]
-      (Integer/parseInt (read-line)))))
+      input-val)))
+
 
 (defmethod do-instruction :output [program]
-  (let [{:keys [pointer memory]} program
+  (let [{:keys [pointer memory phases current-phase]} program
         [param-modes] (deconstruct-opcode-value (memory pointer))
         param (inc pointer)
-        printloc (if (pos? (nth param-modes 0)) param (memory param))]
-    (println (memory printloc))
-    (assoc program :pointer (+ 2 pointer))))
+        output-loc (if (pos? (nth param-modes 0)) param (memory param))]
+
+    (println (memory output-loc))
+    (assoc program :pointer (+ 2 pointer) :output (memory output-loc))))
+
 
 (defmethod do-instruction :jump-if [program]
   (let [{:keys [pointer memory]} program
@@ -66,7 +72,7 @@
 (defn run
   [program]
   (if (= ((:memory program) (:pointer program)) 99)
-    (:memory program)
+    program
     (recur (do-instruction program))))
 
 (defn load-memory-state [filename]
@@ -74,6 +80,9 @@
 
 (defn build-program [memory]
   {:pointer 0 :memory memory})
+
+(defn add-phases [program phases]
+  (assoc program :current-phase 0 :phases phases))
 
 (defn run-with-noun-verb [noun verb filename]
   (-> (load-memory-state filename)
@@ -89,3 +98,6 @@
         :let [result (run-with-noun-verb noun verb filename)]
         :when (= output result)]
     result))
+
+(defn run-with-phases [memory phases]
+  (run (add-phases (build-program memory) phases)))
