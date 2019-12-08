@@ -200,3 +200,11 @@
   (:memory (run (build-program [8 5 6 0 99 2 1]))) => [0 5 6 0 99 2 1]
   (:memory (run (build-program [8 5 6 0 99 1 2]))) => [0 5 6 0 99 1 2]
   (:memory (run (build-program [8 5 6 0 99 1 1]))) => [1 5 6 0 99 1 1]))
+
+
+(facts
+  "About the amplifier control software"
+  (fact
+    "When passed the software, an initial input and the phase order, the program
+    calculates the output"
+    (amplifier-controller [3,15,3,16,1002,16,10,16,1,16,15,15,4,15,99,0,0] 0 [4 3 2 1 0]) => 43210))

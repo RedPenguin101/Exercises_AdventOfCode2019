@@ -1,4 +1,5 @@
-(ns adventofcode.intcode-emulator)
+(ns adventofcode.intcode-emulator
+  (:require [clojure.math.combinatorics :as combo]))
 
 (defn deconstruct-opcode-value [number]
   (let [param-vals (quot number 100)
@@ -106,10 +107,14 @@
     program
     (recur (do-instruction program))))
 
-(defn build-and-run [memory]
-  (run (build-program memory)))
+;;;;
+;; Higher level uses
+;;;;
 
 (defn run-with-noun-verb [noun verb filename]
+  "Runs the intcode computer with a 'noun' and 'verb' input, putting them in
+  the 1 and 2 positions of memory respectively before running the program.
+  The output is the value in memory position 0 when the system halts."
   (-> (load-memory-state filename)
       (assoc 1 noun)
       (assoc 2 verb)
@@ -125,6 +130,12 @@
         :when (= output result)]
     result))
 
-(defn run-with-phases [memory phases]
-  (run (add-phases (build-program memory) phases)))
+(defn amplifier-controller [memory input phase-settings]
+  (let [output (:output (run (build-program memory [(first phase-settings) input])))]
+    (if (= 1 (count phase-settings))
+      output
+      (recur memory output (drop 1 phase-settings)))))
+
+(defn find-max-amplification [memory]
+  (apply max (map #(amplifier-controller memory 0 %) (combo/permutations [0 1 2 3 4]))))
 

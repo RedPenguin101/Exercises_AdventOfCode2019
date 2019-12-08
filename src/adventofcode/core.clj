@@ -36,6 +36,9 @@
 
   ;;(println "=== Day 6.1 ===")
   ;;(orbit/orbit-checksum (orbit/load-orbit-file "day6.txt"))
-  (println "=== Day 6.2 ===")
-  (println (orbit/calculate-jumps :YOU :SAN (orbit/load-orbit-file "day6.txt")))
+  ;;(println "=== Day 6.2 ===")
+  ;;(println (orbit/calculate-jumps :YOU :SAN (orbit/load-orbit-file "day6.txt")))
+
+  (println "=== Day 7.1 ===")
+  (println (intcode/find-max-amplification (intcode/load-memory-state "day7.txt")))
   )
