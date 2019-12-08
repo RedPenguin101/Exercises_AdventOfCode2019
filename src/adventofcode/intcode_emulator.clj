@@ -35,26 +35,33 @@
     (assoc-in
       (assoc program :pointer (+ 4 pointer))
       [:memory (memory (+ 3 pointer))]
-      (calc-new-pos-value program))))
+      (calc-new-pos-value program)))
+  )
 
-(defmethod do-instruction :input [{:keys [pointer memory]}]
+(defmethod do-instruction :input [program]
   (println "type your input")
-  [(+ pointer 2) (assoc memory (memory (inc pointer)) (Integer/parseInt (read-line)))])
+  (let [{:keys [pointer memory]} program]
+    (assoc-in
+      (assoc program :pointer (+ 2 pointer))
+      [:memory (memory (+ 1 pointer))]
+      (Integer/parseInt (read-line)))))
 
-(defmethod do-instruction :output [{:keys [pointer memory]}]
-  (let [[param-modes] (deconstruct-opcode-value (memory pointer))
+(defmethod do-instruction :output [program]
+  (let [{:keys [pointer memory]} program
+        [param-modes] (deconstruct-opcode-value (memory pointer))
         param (inc pointer)
         printloc (if (pos? (nth param-modes 0)) param (memory param))]
     (println (memory printloc))
-    [(+ pointer 2) memory]))
+    (assoc program :pointer (+ 2 pointer))))
 
-(defmethod do-instruction :jump-if [{:keys [pointer memory]}]
-  (let [[param-modes opcode] (deconstruct-opcode-value (memory pointer))
+(defmethod do-instruction :jump-if [program]
+  (let [{:keys [pointer memory]} program
+        [param-modes opcode] (deconstruct-opcode-value (memory pointer))
         immediate_modes (map #(= 1 %) param-modes)
         args (map memory (get-instruction-params pointer))
         [x jump-to-pos] (map #(if %1 %2 (memory %2)) immediate_modes args)
         jump? (= (= 5 opcode) (not= 0 x))]
-    [(if jump? jump-to-pos (+ 3 pointer)) memory]))
+    (assoc program :pointer (if jump? jump-to-pos (+ 3 pointer)))))
 
 (defn run
   [program]
