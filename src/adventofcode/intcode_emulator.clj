@@ -8,8 +8,8 @@
 (defn get-instruction-params [pointer]
   (vec (range (+ 1 pointer) (+ 4 pointer))))
 
-(defn dispatch-instruction [pointer memory]
-  (let [opcode ((deconstruct-opcode-value (memory pointer)) 1)]
+(defn dispatch-instruction [program]
+  (let [opcode ((deconstruct-opcode-value ((:memory program) (:pointer program))) 1)]
     (cond
       (<= opcode 2) :operation
       (<= 7 opcode 8) :operation
@@ -17,7 +17,7 @@
       (= opcode 4) :output
       (<= 5 opcode 6) :jump-if)))
 
-(defn calc-new-pos-value [pointer memory]
+(defn calc-new-pos-value [{:keys [pointer memory]}]
   (let [[param-modes opcode] (deconstruct-opcode-value (memory pointer))
         immediate-modes (take 2 (map #(= 1 %) param-modes))
         args (map memory (get-instruction-params pointer))
@@ -30,21 +30,25 @@
 
 (defmulti do-instruction dispatch-instruction)
 
-(defmethod do-instruction :operation [pointer memory]
-  [(+ 4 pointer) (assoc memory (memory (+ 3 pointer)) (calc-new-pos-value pointer memory))])
+(defmethod do-instruction :operation [program]
+  (let [{:keys [pointer memory]} program]
+    (assoc-in
+      (assoc program :pointer (+ 4 pointer))
+      [:memory (memory (+ 3 pointer))]
+      (calc-new-pos-value program))))
 
-(defmethod do-instruction :input [pointer memory]
+(defmethod do-instruction :input [{:keys [pointer memory]}]
   (println "type your input")
   [(+ pointer 2) (assoc memory (memory (inc pointer)) (Integer/parseInt (read-line)))])
 
-(defmethod do-instruction :output [pointer memory]
+(defmethod do-instruction :output [{:keys [pointer memory]}]
   (let [[param-modes] (deconstruct-opcode-value (memory pointer))
         param (inc pointer)
         printloc (if (pos? (nth param-modes 0)) param (memory param))]
     (println (memory printloc))
     [(+ pointer 2) memory]))
 
-(defmethod do-instruction :jump-if [pointer memory]
+(defmethod do-instruction :jump-if [{:keys [pointer memory]}]
   (let [[param-modes opcode] (deconstruct-opcode-value (memory pointer))
         immediate_modes (map #(= 1 %) param-modes)
         args (map memory (get-instruction-params pointer))
@@ -53,20 +57,22 @@
     [(if jump? jump-to-pos (+ 3 pointer)) memory]))
 
 (defn run
-  ([memory] (run 0 memory))
-  ([pointer memory]
-   (if (= (memory pointer) 99)
-     memory
-     (let [[new-instr new-mem] (do-instruction pointer memory)]
-       (recur new-instr new-mem)))))
+  [program]
+  (if (= ((:memory program) (:pointer program)) 99)
+    (:memory program)
+    (recur (do-instruction program))))
 
 (defn load-memory-state [filename]
   (vec (map #(Integer/parseInt %) (clojure.string/split (clojure.string/trim (slurp filename)) #","))))
+
+(defn build-program [memory]
+  {:pointer 0 :memory memory})
 
 (defn run-with-noun-verb [noun verb filename]
   (-> (load-memory-state filename)
       (assoc 1 noun)
       (assoc 2 verb)
+      (build-program)
       (run)
       (first)))
 

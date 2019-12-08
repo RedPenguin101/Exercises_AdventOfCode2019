@@ -2,22 +2,42 @@
   (:require [midje.sweet :refer :all]
             [adventofcode.intcode-emulator :refer :all]))
 
-
-(facts
-  "about the final calculations"
-  (fact
-    "examples provided"
-    (run [99]) => [99]
-    (run [1 0 0 0 99]) => [2 0 0 0 99]
-    (run [2 3 0 3 99]) => [2 3 0 6 99]
-    (run [2 4 4 5 99 0]) => [2 4 4 5 99 9801]
-    (run [1 1 1 4 99 5 6 0 99]) => [30 1 1 4 2 5 6 0 99]))
-
 (facts
   "about loading int-code data"
   (fact
     "intcode test load"
     (load-memory-state "intcode_test.txt") => [0 1 2 3 4]))
+
+(facts
+  "about building the program"
+  (build-program [1 2 3 4]) => {:pointer 0 :memory [1 2 3 4]})
+
+(facts
+  "about the final calculations with add and multiply operations
+  in position mode only"
+
+  (fact "trivial case" (run (build-program [99])) => [99]))
+
+(facts
+  "about doing + and * instructions (opcodes 1 and 2)"
+
+  (fact
+    "given a 1 instruction and params 0 0 0, the instruction adds
+    pos 0 (1) and pos 0 (1) and puts the results in pos 0"
+
+    (calc-new-pos-value (build-program [1 0 0 0 99])) => 2
+    (do-instruction (build-program [1 0 0 0 99])) => {:pointer 4
+                                                      :memory [2 0 0 0 99]}
+    (run (build-program [1 0 0 0 99])) => [2 0 0 0 99])
+
+  (fact
+    "given a 2 (multiply) opcode and params 3 0 3, the instruction
+    will multiply pos 3 (3) with pos 0 (2) and put the result in
+    pos 3"
+    (run (build-program [2 3 0 3 99])) => [2 3 0 6 99])
+
+  (run (build-program [1 1 1 4 99 5 6 0 99])) => [30 1 1 4 2 5 6 0 99])
+
 
 (facts
   "about desconstructing the opcode"
@@ -44,10 +64,10 @@
 (facts
   "about running programs with long opcodes"
   (fact "long opcodes with different modes and add / mult only"
-        (run [1002 4 3 5 99 0]) => [1002 4 3 5 99 297]
-        (run [1101 4 3 5 99 0]) => [1101 4 3 5 99 7]))
+        (run (build-program [1002 4 3 5 99 0])) => [1002 4 3 5 99 297]
+        (run (build-program [1101 4 3 5 99 0])) => [1101 4 3 5 99 7]))
 
-(facts
+(future-facts
   "about printing output (opcode4)"
   (fact
     "without any position modes"
@@ -60,10 +80,9 @@
     (println "expect 3")
     (run [104 3 99 123]) => [104 3 99 123]
     (println "expect 7 8 9")
-    (run [104 7 104 8 104 9 99 1 2 3]) => [104 7 104 8 104 9 99 1 2 3])
-        )
+    (run [104 7 104 8 104 9 99 1 2 3]) => [104 7 104 8 104 9 99 1 2 3]))
 
-(facts
+(future-facts
  "about conditionals in position mode"
  (fact
   "opcode 5 jumps-if-true, does nothing if false"
@@ -75,7 +94,7 @@
   (run [6 9 10 99 1101 1 1 0 99 0 4]) => [2 9 10 99 1101 1 1 0 99 0 4]))
 
 
-(facts
+(future-facts
  "about conditionals in immediate mode"
  (fact
   "opcode 5 jumps-if-true, does nothing if false"
@@ -90,7 +109,7 @@
   (run [1106 1 4 99 1101 1 1 0 99]) => [1106 1 4 99 1101 1 1 0 99]
   (run [1106 0 4 99 1101 1 1 0 99]) => [2 0 4 99 1101 1 1 0 99]))
 
-(facts
+(future-facts
  "about less than and equal to opcodes in immediate mode"
  (fact
   "opcode 7 (less than): if 1st param is LT 2nd, stores 1 in pos given by param 3"
@@ -102,7 +121,7 @@
   (run [1108 1 2 0 99]) => [0 1 2 0 99]
   (run [1108 1 1 0 99]) => [1 1 1 0 99])))
 
-(facts
+(future-facts
  "about less than and equal to opcodes in position mode"
  (fact
   "opcode 7 (less than): if 1st param is LT 2nd, stores 1 in pos given by param 3"
