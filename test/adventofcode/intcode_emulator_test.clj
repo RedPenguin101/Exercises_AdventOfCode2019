@@ -3,20 +3,33 @@
             [adventofcode.intcode-emulator :refer :all]))
 
 (facts
-  "about loading int-code data"
+  "About loading int-code data from a file"
   (fact
-    "intcode test load"
+    "When passed a file name, where the file contains comma separated integers,
+    the contents of the file are loaded as a vector"
     (load-memory-state "intcode_test.txt") => [0 1 2 3 4]))
 
-(facts
-  "about building the program"
-  (build-program [1 2 3 4]) => {:pointer 0 :memory [1 2 3 4]})
 
 (facts
-  "about the final calculations with add and multiply operations
-  in position mode only"
+  "About building the program"
 
-  (fact "trivial case" (:memory (run (build-program [99]))) => [99]))
+  (fact
+    "The build-program function, when passed a vector of integers, creates a
+    program map with the instruction pointer set to 0 and the memory stored as
+    a vector"
+    (build-program [1 2 3 4]) => {:pointer 0 :memory [1 2 3 4]})
+
+  (fact
+    "If the build-program function is passed a second argument (which should be
+    a vector of integers), that is added as the input-list to the program"
+    (build-program [1 2 3 4] [5 6 7]) => {:pointer 0 :memory [1 2 3 4] :inputs [5 6 7]}))
+
+(facts
+
+  "about the final calculations with add and multiply operations in position mode only"
+  (fact
+    "trivial case"
+    (:memory (run (build-program [99]))) => [99]))
 
 (facts
   "about doing + and * instructions (opcodes 1 and 2)"

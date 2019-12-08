@@ -64,7 +64,7 @@
         param (inc pointer)
         output-loc (if (pos? (nth param-modes 0)) param (memory param))]
 
-    (println (memory output-loc))
+    ;;(println (memory output-loc))
     (assoc program :pointer (+ 2 pointer) :output (memory output-loc))))
 
 
@@ -84,15 +84,18 @@
 (defn load-memory-state [filename]
   (vec (map #(Integer/parseInt %) (clojure.string/split (clojure.string/trim (slurp filename)) #","))))
 
-(defn build-program [memory]
-  {:pointer 0 :memory memory})
+(defn build-program [memory & rest]
+  (let [base {:pointer 0 :memory memory}]
+    (if rest
+      (assoc base :inputs (nth rest 0))
+      base)))
 
 (defn add-phases [program phases]
   (assoc program :current-phase 0 :phases phases))
 
 ;;;;
 ;; running programs
-;;;
+;;;;
 
 (defn run
   "Takes a program, and if the program has a terminate instruction
