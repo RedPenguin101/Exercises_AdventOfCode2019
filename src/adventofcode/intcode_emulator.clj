@@ -65,7 +65,7 @@
         param (inc pointer)
         output-loc (if (pos? (nth param-modes 0)) param (memory param))]
 
-    ;;(println (memory output-loc))
+    (println (memory output-loc))
     (assoc program :pointer (+ 2 pointer) :output (memory output-loc))))
 
 
@@ -138,4 +138,3 @@
 
 (defn find-max-amplification [memory]
   (apply max (map #(amplifier-controller memory 0 %) (combo/permutations [0 1 2 3 4]))))
-
