@@ -1,7 +1,10 @@
 (ns adventofcode.intcode-emulator
   (:require [clojure.math.combinatorics :as combo]))
 
-(defn deconstruct-opcode-value [number]
+(defn deconstruct-opcode-value 
+  "Given a long opcode of up to 5 digits, returns a vector of the param-values
+   (a vector of the first three digits) and the opcode (the last two digits)"
+  [number]
   (let [param-vals (quot number 100)
         opcode (- number (* param-vals 100))]
     [(reverse (map #(Character/digit % 10) (format "%03d" param-vals))) opcode]))
@@ -54,13 +57,13 @@
                     (do (println "type your input") (Integer/parseInt (read-line))))]
 
     (assoc-in
-      (assoc program :pointer (+ 2 pointer) :inputs (drop 1 inputs))
-      [:memory (memory (+ 1 pointer))]
-      input-val)))
+     (assoc program :pointer (+ 2 pointer) :inputs (drop 1 inputs))
+     [:memory (memory (+ 1 pointer))]
+     input-val)))
 
 
 (defmethod do-instruction :output [program]
-  (let [{:keys [pointer memory phases current-phase]} program
+  (let [{:keys [pointer memory]} program
         [param-modes] (deconstruct-opcode-value (memory pointer))
         param (inc pointer)
         output-loc (if (pos? (nth param-modes 0)) param (memory param))]
@@ -83,7 +86,8 @@
 ;;;;
 
 (defn load-memory-state [filename]
-  (vec (map #(Integer/parseInt %) (clojure.string/split (clojure.string/trim (slurp filename)) #","))))
+  (vec (map #(Integer/parseInt %) 
+            (clojure.string/split (clojure.string/trim (slurp filename)) #","))))
 
 (defn build-program [memory & rest]
   (let [base {:pointer 0 :memory memory}]
@@ -130,7 +134,9 @@
         :when (= output result)]
     result))
 
-(defn amplifier-controller [memory input phase-settings]
+(defn amplifier-controller 
+  "Runs the int-code software "
+  [memory input phase-settings]
   (let [output (:output (run (build-program memory [(first phase-settings) input])))]
     (if (= 1 (count phase-settings))
       output
@@ -138,3 +144,5 @@
 
 (defn find-max-amplification [memory]
   (apply max (map #(amplifier-controller memory 0 %) (combo/permutations [0 1 2 3 4]))))
+
+(find-max-amplification [3,15,3,16,1002,16,10,16,1,16,15,15,4,15,99,0,0])

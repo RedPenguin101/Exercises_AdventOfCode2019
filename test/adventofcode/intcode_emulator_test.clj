@@ -3,14 +3,6 @@
             [adventofcode.intcode-emulator :refer :all]))
 
 (facts
-  "About loading int-code data from a file"
-  (fact
-    "When passed a file name, where the file contains comma separated integers,
-    the contents of the file are loaded as a vector"
-    (load-memory-state "intcode_test.txt") => [0 1 2 3 4]))
-
-
-(facts
   "About building the program"
 
   (fact
