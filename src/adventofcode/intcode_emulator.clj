@@ -47,12 +47,13 @@
       (calc-new-pos-value program))))
 
 
-(defmethod do-instruction :input [program]
-  "If the :inputs value of the program has instructions, it uses
+(defmethod do-instruction :input
+  input-instruction
+  [{:keys [pointer memory inputs] :as program}]
+  "If the :input value of the program has instructions, it uses
   the first input. Otherwise it asks the user for input"
 
-  (let [{:keys [pointer memory inputs]} program
-        input-val (if (pos? (count inputs))
+  (let [input-val (if (pos? (count inputs))
                     (first inputs)
                     (do (println "type your input") (Integer/parseInt (read-line))))]
 
@@ -68,7 +69,7 @@
         param (inc pointer)
         output-loc (if (pos? (nth param-modes 0)) param (memory param))]
 
-    (println (memory output-loc))
+    ;;(println (memory output-loc))
     (assoc program :pointer (+ 2 pointer) :output (memory output-loc))))
 
 
@@ -115,10 +116,11 @@
 ;; Higher level uses
 ;;;;
 
-(defn run-with-noun-verb [noun verb filename]
+(defn run-with-noun-verb 
   "Runs the intcode computer with a 'noun' and 'verb' input, putting them in
   the 1 and 2 positions of memory respectively before running the program.
   The output is the value in memory position 0 when the system halts."
+  [noun verb filename]
   (-> (load-memory-state filename)
       (assoc 1 noun)
       (assoc 2 verb)
