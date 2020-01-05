@@ -4,3 +4,4 @@ adventofcode.iml
 .nrepl-port
 hs_err_pid6598.log
 .lein-repl-history
+*.swp
