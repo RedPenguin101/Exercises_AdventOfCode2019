@@ -11,53 +11,66 @@
   and puts its output")
 
 ;; this program takes input and immediately passes it out
-(def in-mem [1 1 3 5 99 -1])
-(def in-out-mem [3 5 4 5 99 -1])
-(def immediate-halt-mem [99])
-(def adder [3 10 1 9 10 10 4 10 99 1 -1])
 
 (defn boot [memory]
   {:memory memory :pointer 0})
 
 (defn calc-new-pos-value [{:keys [memory pointer] :as state}]
-  (-> state
-      (assoc :pointer (+ 4 pointer)) 
-      (assoc-in [:memory 10] 123)))
+  ;(println "calc" state)
+  (({1 + 2 *} (memory pointer)) 
+   (memory (memory (+ pointer 1))) 
+   (memory (memory (+ pointer 2)))))
 
-(defn do-operation [{:keys [pointer] :as state}]
+(defn do-operation [{:keys [pointer, memory] :as state}]
+  ;(println "op" state)
   (-> state
       (assoc :pointer (+ 4 pointer))
-      (assoc-in [:memory (+ 3 pointer)] (calc-new-pos-value state))))
+      (assoc-in [:memory (memory (+ 3 pointer))] (calc-new-pos-value state))))
 
-(defn process-input [{:keys [pointer, memory] :as program} input]
-  (-> program
+(defn process-input [{:keys [pointer, memory] :as state} input]
+  ;(println "in" state "input" input)
+  (-> state
       (assoc :pointer (+ 2 pointer))
       (assoc-in [:memory (memory (+ 1 pointer))] input)))
 
 (defn process-output [{:keys [pointer, memory] :as state}]
-  (println state)
+  ;(println "out" state)
   (memory (memory (+ 1 pointer))))
 
-(defn run [{:keys [pointer memory] :as state} in out]
+(defn run [{:keys [pointer memory] :as state} & in]
+  (let [out (chan) final (chan (a/sliding-buffer 1))]
   (a/go-loop [{:keys [pointer memory] :as state} state]
     (cond
-      (= 99 (memory pointer)) (println "done")
+      (= 99 (memory pointer)) (>! final state)
       (= 3 (memory pointer)) (recur (process-input state (<! in)))
       (= 4 (memory pointer)) (do (>! out (process-output state))
                                  (recur (assoc state :pointer (+ 2 pointer))))
-      :else (recur (do-operation state)))))
+      :else (recur (do-operation state))))
+  [out final]))
 
-(let [in (chan) 
-      middle (chan)
-      out (chan)]
-  (run (boot in-out-mem) in middle)
-  (run (boot in-out-mem) middle out)
-  (>!! in 10)
-  (<!! out)
-  )
+(defn simple-run [memory]
+  (let [[_ final] (run (boot memory))]
+  (<!! final)))
 
-(let [in (chan) 
-      out (chan)]
-  (run (boot adder) in out)
-  (>!! in 5)
-  (<!! out))  
+(comment  
+  (def add-no-out [1 5 6 7 99 1 2 -1])
+  (def in-mem [1 1 3 5 99 -1])
+  (def in-out-mem [3 5 4 5 99 -1])
+  (def immediate-halt-mem [99])
+  (def adder [3 10 1 9 10 10 4 10 99 1 -1])
+  
+  (let [in (chan) 
+        o1 (run (boot in-out-mem) in)
+        out (run (boot in-out-mem) o1)]
+    (>!! in 10)
+    (<!! out))
+  
+  (let [in (chan) 
+        middle (run (boot adder) in)
+        out (run (boot adder) middle)]
+    (>!! in 5)
+    (<!! out))  
+  
+  
+  (simple-run in-mem))
+
