@@ -1,7 +1,7 @@
 (ns adventofcode.intcode-async
   (:require [clojure.math.combinatorics :as combo]
             [clojure.core.async :as a
-                                :refer [>!! >! <!! <! chan go]]))
+                                :refer [>!! >! <!! <! chan go close!]]))
 
 (comment
   "program operations pass the program state around
@@ -37,27 +37,40 @@
   ;(println "out" state)
   (memory (memory (+ 1 pointer))))
 
-(defn run [{:keys [pointer memory] :as state} & in]
-  (let [out (chan) final (chan (a/sliding-buffer 1))]
-  (a/go-loop [{:keys [pointer memory] :as state} state]
-    (cond
-      (= 99 (memory pointer)) (>! final state)
-      (= 3 (memory pointer)) (recur (process-input state (<! in)))
-      (= 4 (memory pointer)) (do (>! out (process-output state))
-                                 (recur (assoc state :pointer (+ 2 pointer))))
-      :else (recur (do-operation state))))
-  [out final]))
+(defn run [{:keys [pointer memory] :as state} in]
+  (let [out (chan) 
+        final (chan (a/sliding-buffer 1))]
+    (a/go-loop [{:keys [pointer memory] :as state} state]
+      (cond
+        (= 99 (memory pointer)) (do  (>! final state) (close! final) (close! out))
+        (= 3 (memory pointer)) (recur (process-input state (<! in)))
+        (= 4 (memory pointer)) (do (>! out (process-output state))
+                                   (recur (assoc state :pointer (+ 2 pointer))))
+        :else (recur (do-operation state))))
+    [out final]))
 
 (defn simple-run [memory]
-  (let [[_ final] (run (boot memory))]
+  (let [[_ final] (run (boot memory) nil)]
   (<!! final)))
 
-(comment  
-  (def add-no-out [1 5 6 7 99 1 2 -1])
+(def in-out-mem [3 5 4 5 99 -1])
+
+(defn collect-output [memory input] 
+  (let [in (chan) 
+       [out _] (run (boot in-out-mem) in)]
+    (>!! in input)
+    (take 1 out)))
+
+(def adder [3 10 1 9 10 10 4 10 99 1 -1])
+
+
+(comment
+
+  (collect-output adder 10)
+
   (def in-mem [1 1 3 5 99 -1])
   (def in-out-mem [3 5 4 5 99 -1])
   (def immediate-halt-mem [99])
-  (def adder [3 10 1 9 10 10 4 10 99 1 -1])
   
   (let [in (chan) 
         o1 (run (boot in-out-mem) in)
