@@ -3,22 +3,30 @@
             [clojure.core.async :as a
                                 :refer [>!! >! <!! <! chan go close!]]))
 
+
 (defn- boot [memory]
   {:memory memory :pointer 0})
 
-(defn deconstruct-opcode-value 
+
+(defn- params-vec-from [param-vals]
+  (reverse (map #(Character/digit % 10) (format "%03d" param-vals))))
+
+
+(defn- deconstruct-opcode-value 
   "Given a long opcode of up to 5 digits, returns a vector of the param-values
    (a vector of the first three digits) and the opcode (the last two digits)"
   [number]
   (let [param-vals (quot number 100)]
-    [(reverse (map #(Character/digit % 10) (format "%03d" param-vals)))
-     (- number (* param-vals 100))]))
+    [(params-vec-from param-vals) (- number (* param-vals 100))]))
 
-(defn opcode [number]
+
+(defn- opcode [number]
   ((deconstruct-opcode-value number) 1))
+
 
 (defn immediate? [{:keys [memory pointer] :as state} position]
   (= 1 (nth ((deconstruct-opcode-value (memory pointer)) 0) position)))
+
 
 (defn calc-new-pos-value [{:keys [memory pointer] :as state}]
   ;(println "calc" state)
@@ -26,15 +34,22 @@
    ((if (immediate? state 0) identity memory) (memory (+ pointer 1))) 
    ((if (immediate? state 1) identity memory) (memory (+ pointer 2)))))
 
-(comment "below gives example"
+
+(comment "below gives example of how calc-new-pos determines immediate vs
+         position mode and applies the appropriate function"
+
   (def s {:memory [1002 4 3 4 33] :pointer 0})
   (def m (:memory s))
   (def p (:pointer s))
+
+  (immediate? s 0) ;=> false, arg 1 is pos mode
+  (immediate? s 1) ;=> true, arg 2 is immediate mode
   
   ((if (immediate? s 0) identity m) (m (+ p 1))) ;=> 33, because in pos mode
   ((if (immediate? s 1) identity m) (m (+ p 2))) ;=> 3 in immediate mode
-  (calc-new-pos-value s) ;=> 99
+  (calc-new-pos-value s) ;=> 99, or 33 * 3
   )
+
 
 (defn do-operation [{:keys [pointer, memory] :as state}]
   ;(println "op" state)
@@ -43,19 +58,22 @@
       (assoc-in [:memory (memory (+ 3 pointer))] 
                 (calc-new-pos-value state))))
 
+
 (defn process-input [{:keys [pointer, memory] :as state} input]
   ;(println "in" state "input" input)
   (-> state
       (assoc :pointer (+ 2 pointer))
       (assoc-in [:memory (memory (+ 1 pointer))] input)))
 
+
 (defn process-output [{:keys [pointer, memory] :as state}]
   ;(println "out" state)
   (memory (memory (+ 1 pointer))))
 
+
 (defn run-singly [{:keys [pointer memory] :as state} inputs outputs]
   (cond
-    (= 99 (opcode (memory pointer))) state
+    (= 99 (opcode (memory pointer))) [outputs state]
 
     (= 3 (opcode (memory pointer))) 
       (recur (process-input state (first inputs)) (drop 1 inputs) outputs)
@@ -66,6 +84,7 @@
              (conj outputs (process-output state)))
 
     :else (recur (do-operation state) inputs outputs)))
+
 
 (defn run [{:keys [pointer memory] :as state} in]
   (let [out (chan) 
@@ -79,8 +98,23 @@
         :else (recur (do-operation state))))
     [out final]))
 
+
 (defn simple-run [memory & inputs]
-  (run-singly (boot memory) (when inputs inputs) []))
+  (nth (run-singly (boot memory) (when inputs inputs) []) 1))
+
+
+(defn collect-output [memory & inputs]
+  (nth (run-singly (boot memory) (when inputs inputs) []) 0))
+
+(comment "collect output demonstrated on input from aoc day 5"
+  (def i
+    (vec (map #(Integer/parseInt %)
+       (->  "resources/inputday5.txt"
+       slurp
+       clojure.string/trim
+       (clojure.string/split #",")))))
+
+  (collect-output i 1))
 
 (defn- take-until-closed 
   "Given a channel, takes messages from that channel until it is closed
@@ -92,11 +126,13 @@
        (recur (conj result-seq message) channel)
        result-seq))))
 
-(defn collect-output [memory input] 
+
+(defn collect-output-async [memory input] 
   (let [in (chan) 
         [out] (run (boot memory) in)]
     (when input (>!! in input))
     (take-until-closed out)))
+
 
 (comment
   (def in-mem [1 1 3 5 99 -1])

@@ -1,6 +1,7 @@
 (ns adventofcode.core
   (:require [adventofcode.fuel-calculator :as fuel]
             [adventofcode.intcode-emulator :as intcode]
+            [adventofcode.intcode-async :as intcode-a]
             [adventofcode.manhattan-calc :as m-calc]
             [adventofcode.password-crack :as pwd]
             [adventofcode.orbit-checksum :as orbit]
@@ -33,6 +34,7 @@
   ;;(println (count (filter pwd/valid-code? (range 123257 647016))))
   ;;(println "---Day 5.1---")
   ;;(intcode/run (intcode/load-memory-state "day5.txt"))
+  (intcode-a/collect-output (intcode/load-memory-state "resources/inputday5.txt") [1])
 
   ;;(println "=== Day 6.1 ===")
   ;;(orbit/orbit-checksum (orbit/load-orbit-file "day6.txt"))
