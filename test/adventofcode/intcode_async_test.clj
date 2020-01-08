@@ -19,4 +19,16 @@
   (:memory (simple-run [1001 4 3 4 96])) => [1001 4 3 4 99]
   )
 
+(fact "lt / eq tests from day 5"
+  (collect-output [3 9 8 9 10 9 4 9 99 -1 8] 5) => [0]
+  (collect-output [3 9 8 9 10 9 4 9 99 -1 8] 8) => [1]
+
+  (collect-output [3 9 7 9 10 9 4 9 99 -1 8] 5) => [1]
+  (collect-output [3 9 7 9 10 9 4 9 99 -1 8] 8) => [0]
+
+  (collect-output [3 3 1108 -1 8 3 4 3 99] 5) => [0]
+  (collect-output [3 3 1108 -1 8 3 4 3 99] 8) => [1]
+
+  (collect-output [3 3 1107 -1 8 3 4 3 99] 5) => [1]
+  (collect-output [3 3 1107 -1 8 3 4 3 99] 8) => [0]) 
 
