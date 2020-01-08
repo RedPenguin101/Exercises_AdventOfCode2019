@@ -11,8 +11,10 @@
 (defn- params-vec-from [param-vals]
   (reverse (map #(Character/digit % 10) (format "%03d" param-vals))))
 
+
 (defn get-instruction-params [pointer]
   (vec (range (+ 1 pointer) (+ 4 pointer))))
+
 
 (defn- deconstruct-opcode-value 
   "Given a long opcode of up to 5 digits, returns a vector of the param-values
@@ -29,11 +31,13 @@
 (defn immediate? [{:keys [memory pointer] :as state} position]
   (= 1 (nth ((deconstruct-opcode-value (memory pointer)) 0) position)))
 
+
 (defn bool-to-int [input]
   (case input
     true 1
     false 0
     input))
+
 
 (defn calc-new-pos-value [{:keys [memory pointer] :as state}]
   ;(println "calc" state)
@@ -42,8 +46,6 @@
      ((if (immediate? state 0) identity memory) (memory (+ pointer 1))) 
      ((if (immediate? state 1) identity memory) (memory (+ pointer 2))))))
 
-
-(true {true 1 false 0})
 
 (comment "below gives example of how calc-new-pos determines immediate vs
          position mode and applies the appropriate function"
@@ -67,9 +69,8 @@
   "returns 0 (false) because 1 is not less than 1"
   (calc-new-pos-value {:memory [1108 2 1 3 -1] :pointer 0})
   (calc-new-pos-value {:memory [1108 2 2 3 -1] :pointer 0})
-  "equals mode: these return 0 and 1 respectively."
-  
-  )
+  "equals mode: these return 0 and 1 respectively.")
+
 
 (defn do-operation [{:keys [pointer, memory] :as state}]
   ;(println "op" state)
@@ -78,6 +79,7 @@
       (assoc-in [:memory (memory (+ 3 pointer))] 
                 (calc-new-pos-value state))))
 
+
 (defn jump-if [{:keys [pointer, memory] :as state}]
   (let [[param-modes opcode] (deconstruct-opcode-value (memory pointer))
         immediate_modes (map #(= 1 %) param-modes)
@@ -85,6 +87,7 @@
         [x jump-to-pos] (map #(if %1 %2 (memory %2)) immediate_modes args)
         jump? (= (= 5 opcode) (not= 0 x))]
     (assoc state :pointer (if jump? jump-to-pos (+ 3 pointer)))))
+
 
 (defn process-input [{:keys [pointer, memory] :as state} input]
   ;(println "in" state "input" input)
@@ -110,8 +113,7 @@
              inputs 
              (conj outputs (process-output state)))
 
-    (#{5 6} (opcode (memory pointer))) 
-      (recur (jump-if state) inputs outputs)
+    (#{5 6} (opcode (memory pointer))) (recur (jump-if state) inputs outputs)
 
     :else (recur (do-operation state) inputs outputs)))
 

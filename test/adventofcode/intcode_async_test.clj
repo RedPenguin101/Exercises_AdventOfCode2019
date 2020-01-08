@@ -32,3 +32,19 @@
   (collect-output [3 3 1107 -1 8 3 4 3 99] 5) => [1]
   (collect-output [3 3 1107 -1 8 3 4 3 99] 8) => [0]) 
 
+(fact "jump-if-true test in immediate mode"
+  (collect-output [1105 1 4 99 4 0 99]) => [1105]
+  (collect-output [1105 0 4 99 4 0 99]) => [])
+
+(fact "jump-if-true in position mode"
+  (collect-output [5 4 4 99 4 0 99]) => [5]
+  (collect-output [5 5 4 99 4 0 99]) => [])
+  
+(fact "jump-if-false test in immediate mode"
+  (collect-output [1106 1 4 99 4 0 99]) => []
+  (collect-output [1106 0 4 99 4 0 99]) => [1106])
+
+(fact "jump-if-fale in position mode"
+  (collect-output [6 4 4 99 4 0 99]) => []
+  (collect-output [6 5 4 99 4 0 99]) => [6])
+  
