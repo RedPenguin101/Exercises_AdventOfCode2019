@@ -48,3 +48,51 @@
   (collect-output [6 4 4 99 4 0 99]) => []
   (collect-output [6 5 4 99 4 0 99]) => [6])
   
+(def adder [3 1 1 1 2 1 4 1 99])
+; a program that adds 1 to its input
+
+(fact "running a single computer in async mode"
+  (collect-output adder 5) => [6]
+  (collect-output-async adder 5) => [6])
+
+(fact "all the same tests as above, but in async mode
+      NOTE you have to provide an input argument to async, even if it's nil"
+  (collect-output-async [4 5 4 6 99 123 321] nil) => [123 321]
+  (collect-output-async [3 0 4 7 4 8 99 123 321] 1) => [123 321]
+  (collect-output-async [3 9 8 9 10 9 4 9 99 -1 8] 5) => [0]
+  (collect-output-async [3 9 8 9 10 9 4 9 99 -1 8] 8) => [1]
+  (collect-output-async [3 9 7 9 10 9 4 9 99 -1 8] 5) => [1]
+  (collect-output-async [3 9 7 9 10 9 4 9 99 -1 8] 8) => [0]
+  (collect-output-async [3 3 1108 -1 8 3 4 3 99] 5) => [0]
+  (collect-output-async [3 3 1108 -1 8 3 4 3 99] 8) => [1]
+  (collect-output-async [3 3 1107 -1 8 3 4 3 99] 5) => [1]
+  (collect-output-async [3 3 1107 -1 8 3 4 3 99] 8) => [0]
+  (collect-output-async [1105 1 4 99 4 0 99] nil) => [1105]
+  (collect-output-async [1105 0 4 99 4 0 99] nil) => []
+  (collect-output-async [5 4 4 99 4 0 99] nil) => [5]
+  (collect-output-async [5 5 4 99 4 0 99] nil) => []
+  (collect-output-async [1106 1 4 99 4 0 99] nil) => []
+  (collect-output-async [1106 0 4 99 4 0 99] nil) => [1106]
+  (collect-output-async [6 4 4 99 4 0 99] nil) => []
+  (collect-output-async [6 5 4 99 4 0 99] nil) => [6])
+
+
+(fact
+ "async non-looping amplifier chains"
+ (async-amps [3 0 3 2 1 0 2 0 4 0 99] [1 2 3 4 5] 6) => 21
+ 
+ (async-amps 
+  [3,15,3,16,1002,16,10,16,1,16,15,15,4,15,99,0,0]
+  [4 3 2 1 0]
+  0) => 43210
+ 
+ (async-amps
+  [3,23,3,24,1002,24,10,24,1002,23,-1,23,101,5,23,23,1,24,23,23,4,23,99,0,0]
+  [0,1,2,3,4]
+  0) => 54321
+ 
+ (async-amps
+  [3,31,3,32,1002,32,10,32,1001,31,-2,31,1007,31,0,33,
+   1002,33,7,33,1,33,31,31,1,32,31,31,4,31,99,0,0,0]
+  [1,0,4,3,2]
+  0) => 65210)
