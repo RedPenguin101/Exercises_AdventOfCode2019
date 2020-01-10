@@ -1,7 +1,7 @@
 (ns adventofcode.intcode-async
   (:require [clojure.math.combinatorics :as combo]
             [clojure.core.async :as a
-                                :refer [>!! >! <!! <! chan go close!]]))
+                                :refer [>!! >! <!! <! chan close!]]))
 
 
 (defn- boot [memory]
@@ -28,7 +28,7 @@
   ((deconstruct-opcode-value number) 1))
 
 
-(defn- immediate? [{:keys [memory pointer] :as state} position]
+(defn- immediate? [{:keys [memory pointer]} position]
   (= 1 (nth ((deconstruct-opcode-value (memory pointer)) 0) position)))
 
 
@@ -40,7 +40,6 @@
 
 
 (defn- calc-new-pos-value [{:keys [memory pointer] :as state}]
-  ;(println "calc" state)
   (bool-to-int 
     (({1 + 2 * 7 < 8 =} (opcode (memory pointer))) 
      ((if (immediate? state 0) identity memory) (memory (+ pointer 1))) 
@@ -120,8 +119,10 @@
 
     :else (recur (do-operation state) inputs outputs)))
 
+
 (defn simple-run [memory & inputs]
   (nth (run-singly (boot memory) (when inputs inputs) []) 1))
+
 
 (defn collect-output [memory & inputs]
   (nth (run-singly (boot memory) (when inputs inputs) []) 0))
@@ -136,34 +137,37 @@
        (clojure.string/split #",")))))
 
   (collect-output i 1)
-  (collect-output i 5) 
-  )
+  (collect-output i 5))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; run intcode computer multithreaded
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn run-async 
+(defn- run-async 
   "given an initial state and in input channel, returns an output channel, and a final
   channel where the final state of the program on halting is dumped out"
-  [{:keys [pointer memory] :as state} in]
+  [state in]
   (let [out (chan) 
         final (chan (a/sliding-buffer 1))]
     (a/go-loop [{:keys [pointer memory] :as state} state]
       (cond
-        (= 99 (opcode (memory pointer))) (do (>! final (if (:output state) (:output state) 0)) (close! final) (close! out))
-        (= 3 (opcode (memory pointer))) (recur (process-input state (<! in)))
-        (= 4 (opcode (memory pointer))) (do (>! out (process-output state))
-                                   (recur (assoc state :pointer (+ 2 pointer) :output (process-output state))))
+        (= 99 (opcode (memory pointer)))
+        (do (>! final (if (:output state) (:output state) 0))
+            (close! final) (close! out))
+
+        (= 3  (opcode (memory pointer))) 
+        (recur (process-input state (<! in)))
+
+        (= 4  (opcode (memory pointer))) 
+        (do (>! out (process-output state))
+            (recur (assoc state
+                          :pointer (+ 2 pointer)
+                          :output (process-output state))))
+
         (#{5 6} (opcode (memory pointer))) (recur (jump-if state))
+
         :else (recur (do-operation state))))
     [out final]))
-
-(comment
-  (let [in (chan)
-        out (run-with-initial-input adder in 1)]
-
-    (<!! out)))
 
 
 (defn- take-until-closed 
@@ -184,7 +188,7 @@
     (take-until-closed out)))
 
 
-(defn run-with-setting [memory in setting]
+(defn- run-with-setting [memory in setting]
   (let [[out final] (run-async (boot memory) in)]
     (>!! in setting)
     [out final]))
@@ -200,6 +204,7 @@
     (>!! in input)
     (<!! out))) 
 
+
 (defn amps-looped [memory [p1 p2 p3 p4 p5] input]
   (let [in (chan)
         [o1] (run-with-setting memory in p1)
@@ -211,25 +216,10 @@
     (>!! in input)
     (<!! final)))
 
+
 (defn find-max-amplification [function memory phases]
   (apply max (map #(function memory % 0) (combo/permutations phases))))
 
-(comment 
-  (find-max-amplification 
-   async-amps 
-   [3,15,3,16,1002,16,10,16,1,16,15,15,4,15,99,0,0]
-   #{0 1 2 3 4})
-
-  (find-max-amplification
-   amps-looped
-   [3,26,1001,26,-4,26,3,27,1002,27,2,27,1,27,26
-    27,4,27,1001,28,-1,28,1005,28,6,99,0,0,5]
-   #{5 6 7 8 9})
-  
-  (amps-looped
-   [3,26,1001,26,-4,26,3,27,1002,27,2,27,1,27,26,27,4,27,1001,28,-1,28,1005,28,6,99,0,0,5]
-   [9,8,7,6,5]
-   0))
 
 (comment 
   "day 7 answers"
@@ -242,6 +232,7 @@
   
   (find-max-amplification async-amps i #{0 1 2 3 4})
   (time (find-max-amplification amps-looped i #{5 6 7 8 9})))
+
 
 (comment "useful testing initial mem states"
   (def in-mem [1 1 3 5 99 -1])
