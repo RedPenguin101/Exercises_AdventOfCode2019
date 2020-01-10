@@ -151,10 +151,10 @@
         final (chan (a/sliding-buffer 1))]
     (a/go-loop [{:keys [pointer memory] :as state} state]
       (cond
-        (= 99 (opcode (memory pointer))) (do (>! final state) (close! final) (close! out))
+        (= 99 (opcode (memory pointer))) (do (>! final (if (:output state) (:output state) 0)) (close! final) (close! out))
         (= 3 (opcode (memory pointer))) (recur (process-input state (<! in)))
         (= 4 (opcode (memory pointer))) (do (>! out (process-output state))
-                                   (recur (assoc state :pointer (+ 2 pointer))))
+                                   (recur (assoc state :pointer (+ 2 pointer) :output (process-output state))))
         (#{5 6} (opcode (memory pointer))) (recur (jump-if state))
         :else (recur (do-operation state))))
     [out final]))
@@ -185,21 +185,52 @@
 
 
 (defn run-with-setting [memory in setting]
-  (let [[out] (run-async (boot memory) in)]
+  (let [[out final] (run-async (boot memory) in)]
     (>!! in setting)
-    out))
+    [out final]))
 
 
 (defn async-amps [memory [p1 p2 p3 p4 p5] input]
   (let [in (chan)
-        o1 (run-with-setting memory in p1)
-        o2 (run-with-setting memory o1 p2)
-        o3 (run-with-setting memory o2 p3)
-        o4 (run-with-setting memory o3 p4)
-        out (run-with-setting memory o4 p5)]
+        [o1] (run-with-setting memory in p1)
+        [o2] (run-with-setting memory o1 p2)
+        [o3] (run-with-setting memory o2 p3)
+        [o4] (run-with-setting memory o3 p4)
+        [out] (run-with-setting memory o4 p5)]
     (>!! in input)
     (<!! out))) 
+
+(defn amps-looped [memory [p1 p2 p3 p4 p5] input]
+  (let [in (chan)
+        [o1] (run-with-setting memory in p1)
+        [o2] (run-with-setting memory o1 p2)
+        [o3] (run-with-setting memory o2 p3)
+        [o4] (run-with-setting memory o3 p4)
+        [out final] (run-with-setting memory o4 p5)]
+    (a/pipe out in)
+    (>!! in input)
+    (<!! final)))
+
+(defn find-max-amplification [function memory phases]
+  (apply max (map #(function memory % 0) (combo/permutations phases))))
+
+(comment 
+  (find-max-amplification 
+   async-amps 
+   [3,15,3,16,1002,16,10,16,1,16,15,15,4,15,99,0,0]
+   #{0 1 2 3 4})
+
+  (find-max-amplification
+   amps-looped
+   [3,26,1001,26,-4,26,3,27,1002,27,2,27,1,27,26
+    27,4,27,1001,28,-1,28,1005,28,6,99,0,0,5]
+   #{5 6 7 8 9})
   
+  (amps-looped
+   [3,26,1001,26,-4,26,3,27,1002,27,2,27,1,27,26,27,4,27,1001,28,-1,28,1005,28,6,99,0,0,5]
+   [9,8,7,6,5]
+   0)
+  )
 
 (comment "useful testing initial mem states"
   (def in-mem [1 1 3 5 99 -1])
