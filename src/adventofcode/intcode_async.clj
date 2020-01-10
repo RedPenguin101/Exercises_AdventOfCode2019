@@ -229,8 +229,19 @@
   (amps-looped
    [3,26,1001,26,-4,26,3,27,1002,27,2,27,1,27,26,27,4,27,1001,28,-1,28,1005,28,6,99,0,0,5]
    [9,8,7,6,5]
-   0)
-  )
+   0))
+
+(comment 
+  "day 7 answers"
+  (def i
+    (vec (map #(Integer/parseInt %)
+              (->  "resources/inputday7.txt"
+                   slurp
+                   clojure.string/trim
+                   (clojure.string/split #",")))))
+  
+  (find-max-amplification async-amps i #{0 1 2 3 4})
+  (time (find-max-amplification amps-looped i #{5 6 7 8 9})))
 
 (comment "useful testing initial mem states"
   (def in-mem [1 1 3 5 99 -1])
