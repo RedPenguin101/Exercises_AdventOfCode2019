@@ -120,13 +120,22 @@
           opcode 9 can be in any mode (assumption).")
 
 
-(comment "the computer should model available memory - i.e. if the initial program is
-          10 integers long, and the program tries to write to memory address 15, it should 
-          be allowed to do that. Memory is intialised at zero.
-          Do this dynamically or with brute force?")
-
-(fact
+(fact "Opcode 9 increments the relative base (intialized at 0) value of the program"
  (:rel-base (simple-run [109 19 99])) => 19
  (:rel-base (simple-run [109 19 109 -5 99])) => 14
  (:rel-base (simple-run [9 0 99])) => 9
  )
+
+
+(facts 
+ "about accessing uninitialized memory"
+ (fact 
+  "accessing a memory address which doesn't exist (so long as its positive) is fine"
+  (:memory (simple-run [1101 5 6 5 99])) => [1101 5 6 5 99 11])
+ (fact  
+  "any 'skipped' values are intialized as 0"
+  (:memory (simple-run [1101 5 6 6 99])) => [1101 5 6 6 99 0 11]))
+ 
+
+(future-fact
+ (collect-output [109,1,204,-1,1001,100,1,100,1008,100,16,101,1006,101,0,99]) => 0)

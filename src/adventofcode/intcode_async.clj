@@ -39,11 +39,15 @@
     input))
 
 
+(defn- get-param-value [{:keys [memory pointer] :as state} param]
+  ((if (immediate? state param) identity memory) (memory (+ 1 param pointer))))
+
+
 (defn- calc-new-pos-value [{:keys [memory pointer] :as state}]
   (bool-to-int 
     (({1 + 2 * 7 < 8 =} (opcode (memory pointer))) 
-     ((if (immediate? state 0) identity memory) (memory (+ pointer 1))) 
-     ((if (immediate? state 1) identity memory) (memory (+ pointer 2))))))
+     (get-param-value state 0) 
+     (get-param-value state 1))))
 
 
 (comment "below gives example of how calc-new-pos determines immediate vs
@@ -71,10 +75,24 @@
   "equals mode: these return 0 and 1 respectively.")
 
 
+(defn expand-memory [memory location]
+  (let [size-gap (- location (count memory))]
+    (if (pos? size-gap)
+      (vec (concat memory (take (inc size-gap) (repeat 0))))
+      memory)))
+
+(comment 
+  "expand memory makes sure you have enough initialized memory to put the
+   operation value where you want it"
+  (expand-memory [1 2 3 4] 10)
+  ;; => (1 2 3 4 0 0 0 0 0 0)
+  )
+
+
 (defn- do-operation [{:keys [pointer, memory] :as state}]
   ;(println "op" state)
   (-> state
-      (assoc :pointer (+ 4 pointer))
+      (assoc :pointer (+ 4 pointer) :memory (expand-memory memory (memory (+ 3 pointer))))
       (assoc-in [:memory (memory (+ 3 pointer))] 
                 (calc-new-pos-value state))))
 
@@ -91,7 +109,7 @@
 (defn- process-input [{:keys [pointer, memory] :as state} input]
   ;(println "in" state "input" input)
   (-> state
-      (assoc :pointer (+ 2 pointer))
+      (assoc :pointer (+ 2 pointer) :memory (expand-memory memory (memory (+ 1 pointer))))
       (assoc-in [:memory (memory (+ 1 pointer))] input)))
 
 
@@ -100,16 +118,11 @@
   (memory (memory (+ 1 pointer))))
 
 
-(defn- update-rel-base [{:keys [pointer memory] :as state}]
-  (println (inc pointer) memory)
+(defn- update-rel-base [{:keys [pointer] :as state}]
   (assoc state 
-         :rel-base (+ 
-                    ((if (immediate? state 0) identity memory) (memory (inc pointer)))
-                    (get state :rel-base 0)) 
+         :rel-base (+ (get-param-value state 0) (get state :rel-base 0)) 
          :pointer (+ 2 pointer)))
 
-(immediate? {:memory [109] :pointer 0} 0)
-((if (immediate? {:memory [9 5 99 1 2] :pointer 0} 0) identity [109 5 99 1 2 3]) ([109 5 99 1 2] (inc 0)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; run intcode computer single threaded
