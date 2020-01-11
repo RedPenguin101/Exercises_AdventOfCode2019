@@ -99,6 +99,18 @@
   ;(println "out" state)
   (memory (memory (+ 1 pointer))))
 
+
+(defn- update-rel-base [{:keys [pointer memory] :as state}]
+  (println (inc pointer) memory)
+  (assoc state 
+         :rel-base (+ 
+                    ((if (immediate? state 0) identity memory) (memory (inc pointer)))
+                    (get state :rel-base 0)) 
+         :pointer (+ 2 pointer)))
+
+(immediate? {:memory [109] :pointer 0} 0)
+((if (immediate? {:memory [9 5 99 1 2] :pointer 0} 0) identity [109 5 99 1 2 3]) ([109 5 99 1 2] (inc 0)))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; run intcode computer single threaded
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -108,14 +120,16 @@
     (= 99 (opcode (memory pointer))) [outputs state]
 
     (= 3 (opcode (memory pointer))) 
-      (recur (process-input state (first inputs)) (drop 1 inputs) outputs)
+    (recur (process-input state (first inputs)) (drop 1 inputs) outputs)
 
     (= 4 (opcode (memory pointer))) 
-      (recur (assoc state :pointer (+ 2 pointer)) 
-             inputs 
-             (conj outputs (process-output state)))
+    (recur (assoc state :pointer (+ 2 pointer)) 
+           inputs 
+           (conj outputs (process-output state)))
 
     (#{5 6} (opcode (memory pointer))) (recur (jump-if state) inputs outputs)
+    
+    (= 9 (opcode (memory pointer))) (recur (update-rel-base state) inputs outputs)
 
     :else (recur (do-operation state) inputs outputs)))
 

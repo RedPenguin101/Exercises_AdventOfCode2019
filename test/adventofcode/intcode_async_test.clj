@@ -111,3 +111,22 @@
   [9,7,8,5,6]
   0) => 18216
  )
+
+
+(comment "new parameter mode: 2, relative. Selects a position relative to cursor
+          refers to itself + relative base RB. When RB=0, RMode is same as position
+          If RB is 50, Rmode param of -7 will look to position 43.
+          Opcode 9 is RB adjust. It has 1 param: the RB changes by the amount of the param
+          opcode 9 can be in any mode (assumption).")
+
+
+(comment "the computer should model available memory - i.e. if the initial program is
+          10 integers long, and the program tries to write to memory address 15, it should 
+          be allowed to do that. Memory is intialised at zero.
+          Do this dynamically or with brute force?")
+
+(fact
+ (:rel-base (simple-run [109 19 99])) => 19
+ (:rel-base (simple-run [109 19 109 -5 99])) => 14
+ (:rel-base (simple-run [9 0 99])) => 9
+ )
