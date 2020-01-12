@@ -18,10 +18,7 @@
     [(modes-vec-from modes) (- instruction (* modes 100))]))
 
 
-(defn- opcode [instruction]
-  ((deconstruct-instruction instruction) 1))
-
-
+; kill
 (defn- apply-modes [instruction]
   (let [modes (get-in instruction [0 0])]
     {:opcode (get-in instruction [0 1])
@@ -30,6 +27,7 @@
      :put-to (get instruction 3 nil)}))
 
 
+; kill
 (defn- function-inputs [{:keys [memory pointer]}]
   (-> (vec (map memory 
                 (range pointer 
@@ -79,7 +77,7 @@
       (vec (concat memory (take (inc size-gap) (repeat 0))))
       memory)))
 
-
+; kill
 (defn- arg-val [memory arg & [rel-base]]
   ;(println memory arg rel-base)
   (cond
@@ -90,7 +88,6 @@
 
 (comment
   (arg-val [203 -4 0 0 5 :a] [:rel -4] 9)
-  (function-inputs {:memory [203 -4 0 0] :pointer 0})
   ) 
 
 
@@ -105,15 +102,6 @@
   (bool->int (({1 + 2 * 7 < 8 =} opcode) a1 a2)))
 
 
-(defn do-operation [{:keys [memory pointer] :as state}]
-  ;(println state)
-  (let [{:keys [opcode args put-to]} (function-inputs state)
-        arg-vals (map #(arg-val memory % (get state :rel-base 0)) args)]
-    (-> state
-        (assoc :pointer (+ 4 pointer) :memory (expand-memory memory put-to))
-        (assoc-in [:memory put-to] (operation-result opcode arg-vals)))))
-
-
 (defn- get-op-input [arg memory]
   "given an argument like [:pos 6] and a memory state, returns the arg value if in :imm
   mode, or the value at that memory position if in :pos mode
@@ -124,7 +112,7 @@
       (memory (arg 1))
       0)))
 
-(defn- do-operation2 [opcode args {:keys [memory pointer] :as state}]
+(defn- do-operation [opcode args {:keys [memory pointer] :as state}]
   ;(println state args (count (:memory state)))
   
   (let [arg-val1 (get-op-input (args 0) memory)
@@ -140,30 +128,15 @@
   )
 
 
-(defn jump-if [{:keys [memory pointer] :as state}]
+; rewrite, get rid of arg-val, funcion-inputs, 
+(defn- jump-if [{:keys [memory pointer] :as state}]
   (let [{:keys [opcode args]} (function-inputs state)
         [test jump-to] (map #(arg-val memory % (get state :rel-base 0)) args)
         jump? (= (= 5 opcode) (not= 0 test))]
     (assoc state :pointer (if jump? jump-to (+ 3 pointer)))))
 
 
-(defn input-to "ugh" [{:keys [args]} rel-base]
-  (if (= (get-in args [0 0]) :pos)
-    (get-in args [0 1])
-    (+ rel-base (get-in args [0 1]))))
-
-
-(defn- process-input [{:keys [pointer, memory] :as state} input]
-  ;(println "in" state "input" input)
-  (-> state
-      (assoc :pointer (+ 2 pointer) :memory (expand-memory memory (memory (+ 1 pointer))))
-      (assoc-in [:memory (input-to 
-                          (function-inputs state) 
-                          (:rel-base state))] 
-                input)))
-
-
-(defn process-input2 [args state input]
+(defn- process-input [args state input]
   ;(println args input state)
   (-> state
       (assoc :pointer (+ 2 (:pointer state)))
@@ -172,22 +145,11 @@
                 input)))
 
 (comment
-  (process-input2
+  (process-input
    [[:pos 5] [:pos 4] [:pos -1]]
    {:memory [9 0 203 -4 4 -1 99], :pointer 2, :rel-base 9}
    0)
   ;; => {:memory [9 0 203 -4 4 0 99], :pointer 4, :rel-base 9}
-  )
-
-(comment
-  (arg-val [203 -4 0 0 5 :a] [:rel -4] 9)
-  (function-inputs {:memory [203 -4 0 0] :pointer 0})
-  ;; => {:opcode 3, :args [[:rel -4] [:pos 0]], :put-to 0}
-  
-  (input-to
-   (function-inputs {:memory [9 0 203 -4 4 -1 99], :pointer 2, :rel-base 9})
-   ;; => {:opcode 3, :args [[:rel -4] [:pos 4]], :put-to -1}
-   9)
   )
 
 
@@ -217,14 +179,14 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 
-(defn- run-singly [{:keys [pointer memory] :as state} inputs outputs]
+(defn- run-singly [{:keys [pointer] :as state} inputs outputs]
   ;(println "========================================================================")
   ;(println state inputs outputs (count (:memory state)))
-  (let [{:keys [opcode args] :as func-inputs} (function-inputs2 state)] 
+  (let [{:keys [opcode args]} (function-inputs2 state)] 
     (cond
       (= 99 opcode) [outputs state]
 
-      (= 3 opcode) (recur (process-input2 args state (first inputs)) (drop 1 inputs) outputs)
+      (= 3 opcode) (recur (process-input args state (first inputs)) (drop 1 inputs) outputs)
 
       (= 4 opcode) (recur (assoc state :pointer (+ 2 pointer)) 
                           inputs 
@@ -234,20 +196,7 @@
       
       (= 9 opcode) (recur (update-rel-base args state) inputs outputs)
 
-      :else (recur (do-operation2 opcode args state) inputs outputs))))
-
-
-(comment
-  "day 9 answers"
-  (def i
-    (vec (map #(Integer/parseInt %)
-              (->  "resources/inputday9.txt"
-                   slurp
-                   clojure.string/trim
-                   (clojure.string/split #",")))))
-
-  (collect-output i 1)
-  )
+      :else (recur (do-operation opcode args state) inputs outputs))))
 
 
 (defn simple-run [memory & inputs]
@@ -269,6 +218,23 @@
   (collect-output i 1)
   (collect-output i 5))
 
+
+(comment
+  "day 9 answers"
+  (def i
+    (vec (map #(Integer/parseInt %)
+              (->  "resources/inputday9.txt"
+                   slurp
+                   clojure.string/trim
+                   (clojure.string/split #",")))))
+
+  (collect-output i 1)
+  ;; => [2671328082]
+
+  (collect-output i 2)
+  ;; => [59095]
+  )
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; run intcode computer multithreaded
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -279,24 +245,22 @@
   [state in]
   (let [out (chan) 
         final (chan (a/sliding-buffer 1))]
-    (a/go-loop [{:keys [pointer memory] :as state} state]
-      (cond
-        (= 99 (opcode (memory pointer)))
-        (do (>! final (if (:output state) (:output state) 0))
-            (close! final) (close! out))
+    (a/go-loop [{:keys [pointer] :as state} state]
+      (let [{:keys [opcode args]} (function-inputs2 state)]
+        (cond
+          (= 99 opcode) (do (>! final (if (:output state) (:output state) 0))
+                            (close! final) (close! out))
 
-        (= 3  (opcode (memory pointer))) 
-        (recur (process-input state (<! in)))
+          (= 3  opcode) (recur (process-input args state (<! in)))
 
-        (= 4  (opcode (memory pointer))) 
-        (do (>! out (process-output state))
-            (recur (assoc state
-                          :pointer (+ 2 pointer)
-                          :output (process-output state))))
+          (= 4  opcode) (do (>! out (process-output state))
+                            (recur (assoc state
+                                          :pointer (+ 2 pointer)
+                                          :output (process-output state))))
 
-        (#{5 6} (opcode (memory pointer))) (recur (jump-if state))
+          (#{5 6} opcode) (recur (jump-if state))
 
-        :else (recur (do-operation state))))
+          :else (recur (do-operation opcode args state)))))
     [out final]))
 
 
@@ -347,7 +311,7 @@
     (<!! final)))
 
 
-(defn find-max-amplificatieon [function memory phases]
+(defn find-max-amplification [function memory phases]
   (apply max (map #(function memory % 0) (combo/permutations phases))))
 
 
