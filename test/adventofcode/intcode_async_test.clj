@@ -121,9 +121,9 @@
 
 
 (fact "Opcode 9 increments the relative base (intialized at 0) value of the program"
- (:rel-base (simple-run [109 19 99 0])) => 19
- (:rel-base (simple-run [109 19 109 -5 99 0])) => 14
- (:rel-base (simple-run [9 0 99 0])) => 9
+ (:rel-base (simple-run [109 19 99])) => 19
+ (:rel-base (simple-run [109 19 109 -5 99])) => 14
+ (:rel-base (simple-run [9 0 99])) => 9
  )
 
 
@@ -135,7 +135,21 @@
  (fact  
   "any 'skipped' values are intialized as 0"
   (:memory (simple-run [1101 5 6 6 99])) => [1101 5 6 6 99 0 11]))
- 
+
+(fact "bleh"
+ (collect-output [9 0 203 -4 4 -1 99] 0) => [9]) 
+
+(fact
+ (collect-output [109,1,204,-1,1001,100,1,100,1008,100,16,101,1006,101,0,99]) => [109,1,204,-1,1001,100,1,100,1008,100,16,101,1006,101,0,99]
+ (collect-output [1102,34915192,34915192,7,4,7,99,0]) => [1219070632396864]
+ (collect-output [104,1125899906842624,99]) => [1125899906842624])
+
+(def i
+  (vec (map #(Integer/parseInt %)
+            (->  "resources/inputday9.txt"
+                 slurp
+                 clojure.string/trim
+                 (clojure.string/split #",")))))
 
 (future-fact
- (collect-output [109,1,204,-1,1001,100,1,100,1008,100,16,101,1006,101,0,99]) => 0)
+ (collect-output i 1))

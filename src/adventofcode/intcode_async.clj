@@ -27,19 +27,37 @@
     {:opcode (get-in instruction [0 1])
      :args [[(modes 0) (instruction 1)] 
             [(modes 1) (instruction 2)]]
-     :put-to (instruction 3)}))
+     :put-to (get instruction 3 nil)}))
 
 
 (defn function-inputs [{:keys [memory pointer]}]
-  (-> (vec (map memory (range pointer (+ 4 pointer))))
+  (-> (vec (map memory 
+                (range pointer 
+                       (+ (min 4 (- (count memory) pointer)) 
+                          pointer))))
       (update 0 deconstruct-instruction)
       apply-modes))
 
 
-(defn arg-val [memory arg]
+(defn expand-memory [memory location]
+  (let [size-gap (- location (count memory))]
+    (if (pos? size-gap)
+      (vec (concat memory (take (inc size-gap) (repeat 0))))
+      memory)))
+
+
+(defn arg-val [memory arg & [rel-base]]
+  ;(println memory arg rel-base)
   (cond
     (= (arg 0) :imm) (arg 1)
-    (= (arg 0) :pos) (memory (arg 1))))
+    (= (arg 0) :pos) ((expand-memory memory (arg 1)) (arg 1))
+    (= (arg 0) :rel) ((expand-memory memory (arg 1)) (+ (if (nil? rel-base) 0 rel-base) (arg 1)))))
+
+
+(comment
+  (arg-val [203 -4 0 0 5 :a] [:rel -4] 9)
+  (function-inputs {:memory [203 -4 0 0] :pointer 0})
+  ) 
 
 
 (defn- bool->int [input]
@@ -49,37 +67,14 @@
     input))
 
 
-(comment "calc new position value deals with lt and eq like this"
-  (operation-result {:memory [1107 1 2 3 -1] :pointer 0})
-  "returns 1 (true) because 1 is less than 2"
-  (operation-result {:memory [1107 2 1 3 -1] :pointer 0})
-  "returns 0 (false) because 1 is not less than 1"
-  (operation-result {:memory [1108 2 1 3 -1] :pointer 0})
-  (operation-result {:memory [1108 2 2 3 -1] :pointer 0})
-  "equals mode: these return 0 and 1 respectively.")
-
-
-(defn expand-memory [memory location]
-  (let [size-gap (- location (count memory))]
-    (if (pos? size-gap)
-      (vec (concat memory (take (inc size-gap) (repeat 0))))
-      memory)))
-
-(comment 
-  "expand memory makes sure you have enough initialized memory to put the
-   operation value where you want it"
-  (expand-memory [1 2 3 4] 10)
-  ;; => (1 2 3 4 0 0 0 0 0 0)
-  )
-
-
 (defn operation-result [opcode [a1 a2]]
   (bool->int (({1 + 2 * 7 < 8 =} opcode) a1 a2)))
 
 
 (defn do-operation [{:keys [memory pointer] :as state}]
+  ;(println state)
   (let [{:keys [opcode args put-to]} (function-inputs state)
-        arg-vals (map #(arg-val memory %) args)]
+        arg-vals (map #(arg-val memory % (get state :rel-base 0)) args)]
     (-> state
         (assoc :pointer (+ 4 pointer) :memory (expand-memory memory put-to))
         (assoc-in [:memory put-to] (operation-result opcode arg-vals)))))
@@ -87,21 +82,42 @@
 
 (defn jump-if [{:keys [memory pointer] :as state}]
   (let [{:keys [opcode args]} (function-inputs state)
-        [test jump-to] (map #(arg-val memory %) args)
+        [test jump-to] (map #(arg-val memory % (get state :rel-base 0)) args)
         jump? (= (= 5 opcode) (not= 0 test))]
     (assoc state :pointer (if jump? jump-to (+ 3 pointer)))))
+
+
+(defn input-to "ugh" [{:keys [args]} rel-base]
+  (if (= (get-in args [0 0]) :pos)
+    (get-in args [0 1])
+    (+ rel-base (get-in args [0 1]))))
 
 
 (defn- process-input [{:keys [pointer, memory] :as state} input]
   ;(println "in" state "input" input)
   (-> state
       (assoc :pointer (+ 2 pointer) :memory (expand-memory memory (memory (+ 1 pointer))))
-      (assoc-in [:memory (memory (+ 1 pointer))] input)))
+      (assoc-in [:memory (input-to 
+                          (function-inputs state) 
+                          (:rel-base state))] 
+                input)))
 
 
-(defn- process-output [{:keys [pointer, memory]}]
+(comment
+  (arg-val [203 -4 0 0 5 :a] [:rel -4] 9)
+  (function-inputs {:memory [203 -4 0 0] :pointer 0})
+  ;; => {:opcode 3, :args [[:rel -4] [:pos 0]], :put-to 0}
+  
+  (input-to
+   (function-inputs {:memory [9 0 203 -4 4 -1 99], :pointer 2, :rel-base 9})
+   ;; => {:opcode 3, :args [[:rel -4] [:pos 4]], :put-to -1}
+   9)
+  )
+
+
+(defn- process-output [{:keys [memory] :as state}]
   ;(println "out" state)
-  (memory (memory (+ 1 pointer))))
+  (arg-val memory ((:args (function-inputs state)) 0) (get state :rel-base 0)))
 
 
 (defn- update-rel-base [{:keys [pointer memory] :as state}]
@@ -115,10 +131,12 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn- run-singly [{:keys [pointer memory] :as state} inputs outputs]
+  ;(println "========================================================================")
+  ;(println state inputs outputs)
   (cond
     (= 99 (opcode (memory pointer))) [outputs state]
 
-    (= 3 (opcode (memory pointer))) 
+    (= 3 (opcode (memory pointer)))  
     (recur (process-input state (first inputs)) (drop 1 inputs) outputs)
 
     (= 4 (opcode (memory pointer))) 
@@ -131,6 +149,20 @@
     (= 9 (opcode (memory pointer))) (recur (update-rel-base state) inputs outputs)
 
     :else (recur (do-operation state) inputs outputs)))
+
+
+
+(comment
+  "day 9 answers"
+  (def i
+    (vec (map #(Integer/parseInt %)
+              (->  "resources/inputday9.txt"
+                   slurp
+                   clojure.string/trim
+                   (clojure.string/split #",")))))
+
+  (collect-output i 1)
+  )
 
 
 (defn simple-run [memory & inputs]
@@ -234,6 +266,10 @@
   (apply max (map #(function memory % 0) (combo/permutations phases))))
 
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; results
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 (comment 
   "day 7 answers"
   (def i
@@ -244,7 +280,8 @@
                    (clojure.string/split #",")))))
   
   (find-max-amplification async-amps i #{0 1 2 3 4})
-  (time (find-max-amplification amps-looped i #{5 6 7 8 9})))
+  (time (find-max-amplification amps-looped i #{5 6 7 8 9}))
+  )
 
 
 (comment "useful testing initial mem states"
