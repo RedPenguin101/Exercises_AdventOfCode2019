@@ -40,17 +40,16 @@
 
 
 (defn apply-rel-base [args rel-base]
-  (map 
-   (fn [arg]
-     (if (= (arg 0) :rel)
-       [:pos (+ (arg 1) rel-base)]
-       arg))
-   args))
+  (vec (map 
+        (fn [arg]
+          (if (= (arg 0) :rel)
+            [:pos (+ (arg 1) rel-base)]
+            arg))
+        args)))
 
 (comment
   (apply-rel-base [[:rel 4] [:pos 5] [:imm 3]] 3)
-  ;; => ([:pos 7] [:pos 5] [:imm 3])
-
+  ;; => [[:pos 7] [:pos 5] [:imm 3]]
   )
 
 (defn- apply-modes2 [instruction]
@@ -70,8 +69,7 @@
 
 (comment
   (function-inputs2 {:memory [2101 4 5 4 99] :pointer 0 :rel-base 3})
-  ;; => {:opcode 1, :args ([:imm 4] [:pos 8] [:pos 4])}
-
+  ;; => {:opcode 1, :args [[:imm 4] [:pos 8] [:pos 4]]}
   )
 
 (defn expand-memory [memory location]
@@ -138,6 +136,22 @@
                 input)))
 
 
+(defn process-input2 [args state input]
+  (println args input state)
+  (-> state
+      (assoc :pointer (+ 2 (:pointer state)))
+      (assoc-in [:memory
+                 (get-in args [0 1])]
+                input)))
+
+(comment
+  (process-input2
+   [[:pos 5] [:pos 4] [:pos -1]]
+   {:memory [9 0 203 -4 4 -1 99], :pointer 2, :rel-base 9}
+   0)
+  ;; => {:memory [9 0 203 -4 4 0 99], :pointer 4, :rel-base 9}
+  )
+
 (comment
   (arg-val [203 -4 0 0 5 :a] [:rel -4] 9)
   (function-inputs {:memory [203 -4 0 0] :pointer 0})
@@ -165,26 +179,27 @@
 ;; run intcode computer single threaded
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+
+
+
 (defn- run-singly [{:keys [pointer memory] :as state} inputs outputs]
   ;(println "========================================================================")
   ;(println state inputs outputs)
-  (cond
-    (= 99 (opcode (memory pointer))) [outputs state]
+  (let [{:keys [opcode args] :as func-inputs} (function-inputs2 state)] 
+    (cond
+      (= 99 opcode) [outputs state]
 
-    (= 3 (opcode (memory pointer)))  
-    (recur (process-input state (first inputs)) (drop 1 inputs) outputs)
+      (= 3 opcode) (recur (process-input2 args state (first inputs)) (drop 1 inputs) outputs)
 
-    (= 4 (opcode (memory pointer))) 
-    (recur (assoc state :pointer (+ 2 pointer)) 
-           inputs 
-           (conj outputs (process-output state)))
+      (= 4 opcode) (recur (assoc state :pointer (+ 2 pointer)) 
+                          inputs 
+                          (conj outputs (process-output state)))
 
-    (#{5 6} (opcode (memory pointer))) (recur (jump-if state) inputs outputs)
-    
-    (= 9 (opcode (memory pointer))) (recur (update-rel-base state) inputs outputs)
+      (#{5 6} opcode) (recur (jump-if state) inputs outputs)
+      
+      (= 9 opcode) (recur (update-rel-base state) inputs outputs)
 
-    :else (recur (do-operation state) inputs outputs)))
-
+      :else (recur (do-operation state) inputs outputs))))
 
 
 (comment
