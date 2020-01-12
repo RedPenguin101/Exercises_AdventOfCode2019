@@ -17,15 +17,47 @@
 
 
 (defn- deconstruct-instruction 
-  "Given a long opcode of up to 5 digits, returns a vector of the param-values
+  "Given an instruction of up to 5 digits, returns a vector of the modes
    (a vector of the first three digits) and the opcode (the last two digits)"
   [instruction]
   (let [modes (quot instruction 100)]
     [(modes-vec-from modes) (- instruction (* modes 100))]))
 
 
+(defn- modes-vec-from2 [modes]
+  (vec (reverse (map #({0 :pos 1 :imm 2 :rel} (Character/digit % 10)) (format "%03d" modes)))))
+
+
+(defn- deconstruct-instruction2
+  [instruction]
+  (let [modes (quot instruction 100)]
+    [(modes-vec-from2 modes) (- instruction (* modes 100))]))
+
+
 (defn- opcode [instruction]
   ((deconstruct-instruction instruction) 1))
+
+
+(defn- apply-modes [instruction]
+  (let [modes (get-in instruction [0 0])]
+    {:opcode (get-in instruction [0 1])
+     :args [[(modes 0) (instruction 1)] 
+            [(modes 1) (instruction 2)]]
+     :put-to (instruction 3)}))
+
+
+(defn function-inputs [{:keys [memory pointer]}]
+  (-> (vec (map memory (range pointer (+ 4 pointer))))
+      (update 0 deconstruct-instruction2)
+      apply-modes))
+
+(function-inputs {:memory [1101 1 2 3 4] :pointer 0})
+;; => [1 [:imm 1] [:imm 2] [:imm 3]]
+
+(defn arg-val [memory arg]
+  (cond
+    (= (arg 0) :imm) (arg 1)
+    (= (arg 0) :pos) (memory (arg 1))))
 
 
 (defn- immediate? [{:keys [memory pointer]} position]
@@ -48,6 +80,7 @@
     (({1 + 2 * 7 < 8 =} (opcode (memory pointer))) 
      (arg-value 0 state) 
      (arg-value 1 state))))
+
 
 
 (comment "below gives example of how calc-new-pos determines immediate vs
@@ -94,6 +127,18 @@
       (assoc :pointer (+ 4 pointer) :memory (expand-memory memory (memory (+ 3 pointer))))
       (assoc-in [:memory (memory (+ 3 pointer))] 
                 (operation-result state))))
+
+
+(defn operation-result2 [opcode [a1 a2]]
+  (bool->int (({1 + 2 * 7 < 8 =} opcode) a1 a2)))
+
+
+(defn do-operation2 [{:keys [memory pointer] :as state}]
+  (let [{:keys [opcode args put-to]} (function-inputs state)
+        arg-vals (map #(arg-val memory %) args)]
+    (-> state
+        (assoc :pointer (+ 4 pointer) :memory (expand-memory memory put-to))
+        (assoc-in [:memory put-to] (operation-result2 opcode arg-vals)))))
 
 
 (defn- jump-if [{:keys [pointer, memory] :as state}]
@@ -143,7 +188,7 @@
     
     (= 9 (opcode (memory pointer))) (recur (update-rel-base state) inputs outputs)
 
-    :else (recur (do-operation state) inputs outputs)))
+    :else (recur (do-operation2 state) inputs outputs)))
 
 
 (defn simple-run [memory & inputs]
@@ -192,7 +237,7 @@
 
         (#{5 6} (opcode (memory pointer))) (recur (jump-if state))
 
-        :else (recur (do-operation state))))
+        :else (recur (do-operation2 state))))
     [out final]))
 
 
