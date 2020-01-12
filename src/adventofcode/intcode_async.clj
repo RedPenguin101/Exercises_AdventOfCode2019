@@ -40,10 +40,11 @@
 
 
 (defn apply-rel-base [args rel-base]
+  (println args rel-base)
   (vec (map 
         (fn [arg]
           (if (= (arg 0) :rel)
-            [:pos (+ (arg 1) rel-base)]
+            [:pos (+ (arg 1) (if (nil? rel-base) 0 rel-base))]
             arg))
         args)))
 
@@ -137,7 +138,7 @@
 
 
 (defn process-input2 [args state input]
-  (println args input state)
+  ;(println args input state)
   (-> state
       (assoc :pointer (+ 2 (:pointer state)))
       (assoc-in [:memory
@@ -169,22 +170,30 @@
   (arg-val memory ((:args (function-inputs state)) 0) (get state :rel-base 0)))
 
 
-(defn- update-rel-base [{:keys [pointer memory] :as state}]
-  (assoc state 
-         :rel-base (+ (arg-val memory ((:args (function-inputs state)) 0)) (get state :rel-base 0)) 
-         :pointer (+ 2 pointer)))
+(defn- update-rel-base [[arg] state]
+  (if (= (arg 0) :imm)
+    (assoc state
+           :rel-base (+ (get arg 1) (get state :rel-base 0))
+           :pointer (+ 2 (:pointer state)))
+    (assoc state
+           :rel-base (+ ((:memory state) (get arg 1)) (get state :rel-base 0))
+           :pointer (+ 2 (:pointer state)))))
 
+(comment
+  (update-rel-base [[:pos 5]] {:memory [9 5 0 0 0 10] :pointer 0})
+  ;; => {:memory [9 5 0 0 0 10], :pointer 2, :rel-base 10}
 
+  (update-rel-base [[:imm 5]] {:memory [9 5 0 0 0 10] :pointer 0})
+  ;; => {:memory [9 5 0 0 0 10], :pointer 2, :rel-base 5}
+  )
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; run intcode computer single threaded
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 
-
-
 (defn- run-singly [{:keys [pointer memory] :as state} inputs outputs]
-  ;(println "========================================================================")
-  ;(println state inputs outputs)
+  (println "========================================================================")
+  (println state inputs outputs (count (:memory state)))
   (let [{:keys [opcode args] :as func-inputs} (function-inputs2 state)] 
     (cond
       (= 99 opcode) [outputs state]
@@ -197,7 +206,7 @@
 
       (#{5 6} opcode) (recur (jump-if state) inputs outputs)
       
-      (= 9 opcode) (recur (update-rel-base state) inputs outputs)
+      (= 9 opcode) (recur (update-rel-base args state) inputs outputs)
 
       :else (recur (do-operation state) inputs outputs))))
 
