@@ -121,9 +121,9 @@
 
 
 (fact "Opcode 9 increments the relative base (intialized at 0) value of the program"
- (:rel-base (simple-run [109 19 99])) => 19
- (:rel-base (simple-run [109 19 109 -5 99])) => 14
- (:rel-base (simple-run [9 0 99])) => 9
+ (:rel-base (simple-run [109 19 99 0])) => 19
+ (:rel-base (simple-run [109 19 109 -5 99 0])) => 14
+ (:rel-base (simple-run [9 0 99 0])) => 9
  )
 
 

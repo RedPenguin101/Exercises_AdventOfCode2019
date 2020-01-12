@@ -8,30 +8,14 @@
   {:memory memory :pointer 0})
 
 
-(defn- get-instruction-params [pointer]
-  (vec (range (+ 1 pointer) (+ 4 pointer))))
-
-
 (defn- modes-vec-from [modes]
-  (reverse (map #(Character/digit % 10) (format "%03d" modes))))
-
-
-(defn- deconstruct-instruction 
-  "Given an instruction of up to 5 digits, returns a vector of the modes
-   (a vector of the first three digits) and the opcode (the last two digits)"
-  [instruction]
-  (let [modes (quot instruction 100)]
-    [(modes-vec-from modes) (- instruction (* modes 100))]))
-
-
-(defn- modes-vec-from2 [modes]
   (vec (reverse (map #({0 :pos 1 :imm 2 :rel} (Character/digit % 10)) (format "%03d" modes)))))
 
 
-(defn- deconstruct-instruction2
+(defn- deconstruct-instruction
   [instruction]
   (let [modes (quot instruction 100)]
-    [(modes-vec-from2 modes) (- instruction (* modes 100))]))
+    [(modes-vec-from modes) (- instruction (* modes 100))]))
 
 
 (defn- opcode [instruction]
@@ -48,7 +32,7 @@
 
 (defn function-inputs [{:keys [memory pointer]}]
   (-> (vec (map memory (range pointer (+ 4 pointer))))
-      (update 0 deconstruct-instruction2)
+      (update 0 deconstruct-instruction)
       apply-modes))
 
 
@@ -58,35 +42,12 @@
     (= (arg 0) :pos) (memory (arg 1))))
 
 
-(defn- immediate? [{:keys [memory pointer]} position]
-  (= 1 (nth ((deconstruct-instruction (memory pointer)) 0) position)))
-
-
 (defn- bool->int [input]
   (case input
     true 1
     false 0
     input))
 
-
-(defn- arg-value [arg {:keys [memory pointer] :as state} ]
-  ((if (immediate? state arg) identity memory) (memory (+ 1 arg pointer))))
-
-
-(comment "below gives example of how calc-new-pos determines immediate vs
-         position mode and applies the appropriate function"
-
-  (def s {:memory [1002 4 3 4 33] :pointer 0})
-  (def m (:memory s))
-  (def p (:pointer s))
-
-  (immediate? s 0) ;=> false, arg 1 is pos mode
-  (immediate? s 1) ;=> true, arg 2 is immediate mode
-  
-  ((if (immediate? s 0) identity m) (m (+ p 1))) ;=> 33, because in pos mode
-  ((if (immediate? s 1) identity m) (m (+ p 2))) ;=> 3 in immediate mode
-  (operation-result s) ;=> 99, or 33 * 3
-  )
 
 (comment "calc new position value deals with lt and eq like this"
   (operation-result {:memory [1107 1 2 3 -1] :pointer 0})
@@ -124,25 +85,11 @@
         (assoc-in [:memory put-to] (operation-result opcode arg-vals)))))
 
 
-(defn jump-if2 [{:keys [memory pointer] :as state}]
+(defn jump-if [{:keys [memory pointer] :as state}]
   (let [{:keys [opcode args]} (function-inputs state)
         [test jump-to] (map #(arg-val memory %) args)
         jump? (= (= 5 opcode) (not= 0 test))]
     (assoc state :pointer (if jump? jump-to (+ 3 pointer)))))
-
-(arg-val [1105 1 4 99 4 0 99] [:pos 1])
-
-
-(jump-if2 {:memory [0005 5 4 99 7 0 99] :pointer 0}) 
-;; => {:opcode 5, :args [[:imm 1] [:imm 4]], :put-to 99}
-
-(defn- jump-if [{:keys [pointer, memory] :as state}]
-  (let [[modes opcode] (deconstruct-instruction (memory pointer))
-        immediate_modes (map #(= 1 %) modes)
-        args (map memory (get-instruction-params pointer))
-        [x jump-to-pos] (map #(if %1 %2 (memory %2)) immediate_modes args)
-        jump? (= (= 5 opcode) (not= 0 x))]
-    (assoc state :pointer (if jump? jump-to-pos (+ 3 pointer)))))
 
 
 (defn- process-input [{:keys [pointer, memory] :as state} input]
@@ -157,9 +104,9 @@
   (memory (memory (+ 1 pointer))))
 
 
-(defn- update-rel-base [{:keys [pointer] :as state}]
+(defn- update-rel-base [{:keys [pointer memory] :as state}]
   (assoc state 
-         :rel-base (+ (arg-value 0 state) (get state :rel-base 0)) 
+         :rel-base (+ (arg-val memory ((:args (function-inputs state)) 0)) (get state :rel-base 0)) 
          :pointer (+ 2 pointer)))
 
 
@@ -179,7 +126,7 @@
            inputs 
            (conj outputs (process-output state)))
 
-    (#{5 6} (opcode (memory pointer))) (recur (jump-if2 state) inputs outputs)
+    (#{5 6} (opcode (memory pointer))) (recur (jump-if state) inputs outputs)
     
     (= 9 (opcode (memory pointer))) (recur (update-rel-base state) inputs outputs)
 
@@ -230,7 +177,7 @@
                           :pointer (+ 2 pointer)
                           :output (process-output state))))
 
-        (#{5 6} (opcode (memory pointer))) (recur (jump-if2 state))
+        (#{5 6} (opcode (memory pointer))) (recur (jump-if state))
 
         :else (recur (do-operation state))))
     [out final]))
