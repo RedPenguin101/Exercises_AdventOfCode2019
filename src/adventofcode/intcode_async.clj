@@ -8,46 +8,46 @@
   {:memory memory :pointer 0})
 
 
-(defn- params-vec-from [param-vals]
-  (reverse (map #(Character/digit % 10) (format "%03d" param-vals))))
-
-
 (defn- get-instruction-params [pointer]
   (vec (range (+ 1 pointer) (+ 4 pointer))))
 
 
-(defn- deconstruct-opcode-value 
+(defn- modes-vec-from [modes]
+  (reverse (map #(Character/digit % 10) (format "%03d" modes))))
+
+
+(defn- deconstruct-instruction 
   "Given a long opcode of up to 5 digits, returns a vector of the param-values
    (a vector of the first three digits) and the opcode (the last two digits)"
-  [number]
-  (let [param-vals (quot number 100)]
-    [(params-vec-from param-vals) (- number (* param-vals 100))]))
+  [instruction]
+  (let [modes (quot instruction 100)]
+    [(modes-vec-from modes) (- instruction (* modes 100))]))
 
 
-(defn- opcode [number]
-  ((deconstruct-opcode-value number) 1))
+(defn- opcode [instruction]
+  ((deconstruct-instruction instruction) 1))
 
 
 (defn- immediate? [{:keys [memory pointer]} position]
-  (= 1 (nth ((deconstruct-opcode-value (memory pointer)) 0) position)))
+  (= 1 (nth ((deconstruct-instruction (memory pointer)) 0) position)))
 
 
-(defn- bool-to-int [input]
+(defn- bool->int [input]
   (case input
     true 1
     false 0
     input))
 
 
-(defn- get-param-value [{:keys [memory pointer] :as state} param]
-  ((if (immediate? state param) identity memory) (memory (+ 1 param pointer))))
+(defn- arg-value [arg {:keys [memory pointer] :as state} ]
+  ((if (immediate? state arg) identity memory) (memory (+ 1 arg pointer))))
 
 
-(defn- calc-new-pos-value [{:keys [memory pointer] :as state}]
-  (bool-to-int 
+(defn- operation-result [{:keys [memory pointer] :as state}]
+  (bool->int 
     (({1 + 2 * 7 < 8 =} (opcode (memory pointer))) 
-     (get-param-value state 0) 
-     (get-param-value state 1))))
+     (arg-value 0 state) 
+     (arg-value 1 state))))
 
 
 (comment "below gives example of how calc-new-pos determines immediate vs
@@ -62,16 +62,16 @@
   
   ((if (immediate? s 0) identity m) (m (+ p 1))) ;=> 33, because in pos mode
   ((if (immediate? s 1) identity m) (m (+ p 2))) ;=> 3 in immediate mode
-  (calc-new-pos-value s) ;=> 99, or 33 * 3
+  (operation-result s) ;=> 99, or 33 * 3
   )
 
 (comment "calc new position value deals with lt and eq like this"
-  (calc-new-pos-value {:memory [1107 1 2 3 -1] :pointer 0})
+  (operation-result {:memory [1107 1 2 3 -1] :pointer 0})
   "returns 1 (true) because 1 is less than 2"
-  (calc-new-pos-value {:memory [1107 2 1 3 -1] :pointer 0})
+  (operation-result {:memory [1107 2 1 3 -1] :pointer 0})
   "returns 0 (false) because 1 is not less than 1"
-  (calc-new-pos-value {:memory [1108 2 1 3 -1] :pointer 0})
-  (calc-new-pos-value {:memory [1108 2 2 3 -1] :pointer 0})
+  (operation-result {:memory [1108 2 1 3 -1] :pointer 0})
+  (operation-result {:memory [1108 2 2 3 -1] :pointer 0})
   "equals mode: these return 0 and 1 respectively.")
 
 
@@ -90,16 +90,15 @@
 
 
 (defn- do-operation [{:keys [pointer, memory] :as state}]
-  ;(println "op" state)
   (-> state
       (assoc :pointer (+ 4 pointer) :memory (expand-memory memory (memory (+ 3 pointer))))
       (assoc-in [:memory (memory (+ 3 pointer))] 
-                (calc-new-pos-value state))))
+                (operation-result state))))
 
 
 (defn- jump-if [{:keys [pointer, memory] :as state}]
-  (let [[param-modes opcode] (deconstruct-opcode-value (memory pointer))
-        immediate_modes (map #(= 1 %) param-modes)
+  (let [[modes opcode] (deconstruct-instruction (memory pointer))
+        immediate_modes (map #(= 1 %) modes)
         args (map memory (get-instruction-params pointer))
         [x jump-to-pos] (map #(if %1 %2 (memory %2)) immediate_modes args)
         jump? (= (= 5 opcode) (not= 0 x))]
@@ -113,14 +112,14 @@
       (assoc-in [:memory (memory (+ 1 pointer))] input)))
 
 
-(defn- process-output [{:keys [pointer, memory] :as state}]
+(defn- process-output [{:keys [pointer, memory]}]
   ;(println "out" state)
   (memory (memory (+ 1 pointer))))
 
 
 (defn- update-rel-base [{:keys [pointer] :as state}]
   (assoc state 
-         :rel-base (+ (get-param-value state 0) (get state :rel-base 0)) 
+         :rel-base (+ (arg-value 0 state) (get state :rel-base 0)) 
          :pointer (+ 2 pointer)))
 
 
