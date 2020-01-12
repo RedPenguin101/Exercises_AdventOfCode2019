@@ -51,8 +51,6 @@
       (update 0 deconstruct-instruction2)
       apply-modes))
 
-(function-inputs {:memory [1101 1 2 3 4] :pointer 0})
-;; => [1 [:imm 1] [:imm 2] [:imm 3]]
 
 (defn arg-val [memory arg]
   (cond
@@ -73,14 +71,6 @@
 
 (defn- arg-value [arg {:keys [memory pointer] :as state} ]
   ((if (immediate? state arg) identity memory) (memory (+ 1 arg pointer))))
-
-
-(defn- operation-result [{:keys [memory pointer] :as state}]
-  (bool->int 
-    (({1 + 2 * 7 < 8 =} (opcode (memory pointer))) 
-     (arg-value 0 state) 
-     (arg-value 1 state))))
-
 
 
 (comment "below gives example of how calc-new-pos determines immediate vs
@@ -122,24 +112,29 @@
   )
 
 
-(defn- do-operation [{:keys [pointer, memory] :as state}]
-  (-> state
-      (assoc :pointer (+ 4 pointer) :memory (expand-memory memory (memory (+ 3 pointer))))
-      (assoc-in [:memory (memory (+ 3 pointer))] 
-                (operation-result state))))
-
-
-(defn operation-result2 [opcode [a1 a2]]
+(defn operation-result [opcode [a1 a2]]
   (bool->int (({1 + 2 * 7 < 8 =} opcode) a1 a2)))
 
 
-(defn do-operation2 [{:keys [memory pointer] :as state}]
+(defn do-operation [{:keys [memory pointer] :as state}]
   (let [{:keys [opcode args put-to]} (function-inputs state)
         arg-vals (map #(arg-val memory %) args)]
     (-> state
         (assoc :pointer (+ 4 pointer) :memory (expand-memory memory put-to))
-        (assoc-in [:memory put-to] (operation-result2 opcode arg-vals)))))
+        (assoc-in [:memory put-to] (operation-result opcode arg-vals)))))
 
+
+(defn jump-if2 [{:keys [memory pointer] :as state}]
+  (let [{:keys [opcode args]} (function-inputs state)
+        [test jump-to] (map #(arg-val memory %) args)
+        jump? (= (= 5 opcode) (not= 0 test))]
+    (assoc state :pointer (if jump? jump-to (+ 3 pointer)))))
+
+(arg-val [1105 1 4 99 4 0 99] [:pos 1])
+
+
+(jump-if2 {:memory [0005 5 4 99 7 0 99] :pointer 0}) 
+;; => {:opcode 5, :args [[:imm 1] [:imm 4]], :put-to 99}
 
 (defn- jump-if [{:keys [pointer, memory] :as state}]
   (let [[modes opcode] (deconstruct-instruction (memory pointer))
@@ -184,11 +179,11 @@
            inputs 
            (conj outputs (process-output state)))
 
-    (#{5 6} (opcode (memory pointer))) (recur (jump-if state) inputs outputs)
+    (#{5 6} (opcode (memory pointer))) (recur (jump-if2 state) inputs outputs)
     
     (= 9 (opcode (memory pointer))) (recur (update-rel-base state) inputs outputs)
 
-    :else (recur (do-operation2 state) inputs outputs)))
+    :else (recur (do-operation state) inputs outputs)))
 
 
 (defn simple-run [memory & inputs]
@@ -235,9 +230,9 @@
                           :pointer (+ 2 pointer)
                           :output (process-output state))))
 
-        (#{5 6} (opcode (memory pointer))) (recur (jump-if state))
+        (#{5 6} (opcode (memory pointer))) (recur (jump-if2 state))
 
-        :else (recur (do-operation2 state))))
+        :else (recur (do-operation state))))
     [out final]))
 
 
