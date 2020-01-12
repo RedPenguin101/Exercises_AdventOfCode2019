@@ -39,6 +39,41 @@
       apply-modes))
 
 
+(defn apply-rel-base [args rel-base]
+  (map 
+   (fn [arg]
+     (if (= (arg 0) :rel)
+       [:pos (+ (arg 1) rel-base)]
+       arg))
+   args))
+
+(comment
+  (apply-rel-base [[:rel 4] [:pos 5] [:imm 3]] 3)
+  ;; => ([:pos 7] [:pos 5] [:imm 3])
+
+  )
+
+(defn- apply-modes2 [instruction]
+  (let [modes (get-in instruction [0 0])]
+    {:opcode (get-in instruction [0 1])
+     :args (map #(vector %1 %2) modes (drop 1 instruction))}))
+
+
+(defn function-inputs2 [{:keys [memory, pointer, rel-base]}]
+  (-> (vec (map memory
+                (range pointer
+                       (+ (min 4 (- (count memory) pointer))
+                          pointer))))
+      (update 0 deconstruct-instruction)
+      (apply-modes2)
+      (update :args apply-rel-base rel-base)))
+
+(comment
+  (function-inputs2 {:memory [2101 4 5 4 99] :pointer 0 :rel-base 3})
+  ;; => {:opcode 1, :args ([:imm 4] [:pos 8] [:pos 4])}
+
+  )
+
 (defn expand-memory [memory location]
   (let [size-gap (- location (count memory))]
     (if (pos? size-gap)
