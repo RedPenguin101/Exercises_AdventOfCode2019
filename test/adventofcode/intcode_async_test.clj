@@ -151,5 +151,5 @@
                  clojure.string/trim
                  (clojure.string/split #",")))))
 
-(future-fact
- (collect-output i 1))
+(fact
+ (collect-output i 1) => [2671328082])

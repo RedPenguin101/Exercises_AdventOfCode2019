@@ -30,7 +30,7 @@
      :put-to (get instruction 3 nil)}))
 
 
-(defn function-inputs [{:keys [memory pointer]}]
+(defn- function-inputs [{:keys [memory pointer]}]
   (-> (vec (map memory 
                 (range pointer 
                        (+ (min 4 (- (count memory) pointer)) 
@@ -40,7 +40,7 @@
 
 
 (defn apply-rel-base [args rel-base]
-  (println args rel-base)
+  ;(println args rel-base)
   (vec (map 
         (fn [arg]
           (if (= (arg 0) :rel)
@@ -59,7 +59,7 @@
      :args (map #(vector %1 %2) modes (drop 1 instruction))}))
 
 
-(defn function-inputs2 [{:keys [memory, pointer, rel-base]}]
+(defn- function-inputs2 [{:keys [memory, pointer, rel-base]}]
   (-> (vec (map memory
                 (range pointer
                        (+ (min 4 (- (count memory) pointer))
@@ -73,14 +73,14 @@
   ;; => {:opcode 1, :args [[:imm 4] [:pos 8] [:pos 4]]}
   )
 
-(defn expand-memory [memory location]
+(defn- expand-memory [memory location]
   (let [size-gap (- location (count memory))]
     (if (pos? size-gap)
       (vec (concat memory (take (inc size-gap) (repeat 0))))
       memory)))
 
 
-(defn arg-val [memory arg & [rel-base]]
+(defn- arg-val [memory arg & [rel-base]]
   ;(println memory arg rel-base)
   (cond
     (= (arg 0) :imm) (arg 1)
@@ -101,7 +101,7 @@
     input))
 
 
-(defn operation-result [opcode [a1 a2]]
+(defn- operation-result [opcode [a1 a2]]
   (bool->int (({1 + 2 * 7 < 8 =} opcode) a1 a2)))
 
 
@@ -112,6 +112,32 @@
     (-> state
         (assoc :pointer (+ 4 pointer) :memory (expand-memory memory put-to))
         (assoc-in [:memory put-to] (operation-result opcode arg-vals)))))
+
+
+(defn- get-op-input [arg memory]
+  "given an argument like [:pos 6] and a memory state, returns the arg value if in :imm
+  mode, or the value at that memory position if in :pos mode
+  if the position doesn't exist in memory, return 0"
+  (if (= :imm (arg 0))
+    (arg 1)
+    (if (< (arg 1) (count memory)) 
+      (memory (arg 1))
+      0)))
+
+(defn- do-operation2 [opcode args {:keys [memory pointer] :as state}]
+  ;(println state args (count (:memory state)))
+  
+  (let [arg-val1 (get-op-input (args 0) memory)
+        arg-val2 (get-op-input (args 1) memory)
+        put-to (get-in args [2 1])]
+    (-> state
+        (assoc :pointer (+ 4 pointer) 
+               :memory (expand-memory memory put-to))
+        (assoc-in [:memory put-to] (operation-result opcode [arg-val1 arg-val2])))))
+
+(comment
+  "hello"
+  )
 
 
 (defn jump-if [{:keys [memory pointer] :as state}]
@@ -192,8 +218,8 @@
 
 
 (defn- run-singly [{:keys [pointer memory] :as state} inputs outputs]
-  (println "========================================================================")
-  (println state inputs outputs (count (:memory state)))
+  ;(println "========================================================================")
+  ;(println state inputs outputs (count (:memory state)))
   (let [{:keys [opcode args] :as func-inputs} (function-inputs2 state)] 
     (cond
       (= 99 opcode) [outputs state]
@@ -208,7 +234,7 @@
       
       (= 9 opcode) (recur (update-rel-base args state) inputs outputs)
 
-      :else (recur (do-operation state) inputs outputs))))
+      :else (recur (do-operation2 opcode args state) inputs outputs))))
 
 
 (comment
@@ -321,7 +347,7 @@
     (<!! final)))
 
 
-(defn find-max-amplification [function memory phases]
+(defn find-max-amplificatieon [function memory phases]
   (apply max (map #(function memory % 0) (combo/permutations phases))))
 
 
