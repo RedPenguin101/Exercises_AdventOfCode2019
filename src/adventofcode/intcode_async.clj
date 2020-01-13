@@ -77,18 +77,13 @@
       (vec (concat memory (take (inc size-gap) (repeat 0))))
       memory)))
 
-; kill
+; kill - neeed to kill output too!
 (defn- arg-val [memory arg & [rel-base]]
   ;(println memory arg rel-base)
   (cond
     (= (arg 0) :imm) (arg 1)
     (= (arg 0) :pos) ((expand-memory memory (arg 1)) (arg 1))
     (= (arg 0) :rel) ((expand-memory memory (arg 1)) (+ (if (nil? rel-base) 0 rel-base) (arg 1)))))
-
-
-(comment
-  (arg-val [203 -4 0 0 5 :a] [:rel -4] 9)
-  ) 
 
 
 (defn- bool->int [input]
@@ -123,17 +118,14 @@
                :memory (expand-memory memory put-to))
         (assoc-in [:memory put-to] (operation-result opcode [arg-val1 arg-val2])))))
 
-(comment
-  "hello"
-  )
 
-
-; rewrite, get rid of arg-val, funcion-inputs, 
-(defn- jump-if [{:keys [memory pointer] :as state}]
-  (let [{:keys [opcode args]} (function-inputs state)
-        [test jump-to] (map #(arg-val memory % (get state :rel-base 0)) args)
-        jump? (= (= 5 opcode) (not= 0 test))]
-    (assoc state :pointer (if jump? jump-to (+ 3 pointer)))))
+(defn- jump-if2 [opcode args2 {:keys [memory pointer] :as state}]
+  (let [jump? (= (= 5 opcode) (not= 0 (get-op-input (args2 0) memory)))]
+    (assoc state 
+           :pointer 
+           (if jump? 
+             (get-op-input (args2 1) memory) 
+             (+ 3 pointer)))))
 
 
 (defn- process-input [args state input]
@@ -192,7 +184,7 @@
                           inputs 
                           (conj outputs (process-output state)))
 
-      (#{5 6} opcode) (recur (jump-if state) inputs outputs)
+      (#{5 6} opcode) (recur (jump-if2 opcode args state) inputs outputs)
       
       (= 9 opcode) (recur (update-rel-base args state) inputs outputs)
 
@@ -258,7 +250,7 @@
                                           :pointer (+ 2 pointer)
                                           :output (process-output state))))
 
-          (#{5 6} opcode) (recur (jump-if state))
+          (#{5 6} opcode) (recur (jump-if2 opcode args state))
 
           :else (recur (do-operation opcode args state)))))
     [out final]))
