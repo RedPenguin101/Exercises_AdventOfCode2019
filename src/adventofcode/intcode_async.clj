@@ -18,25 +18,6 @@
     [(modes-vec-from modes) (- instruction (* modes 100))]))
 
 
-; kill
-(defn- apply-modes [instruction]
-  (let [modes (get-in instruction [0 0])]
-    {:opcode (get-in instruction [0 1])
-     :args [[(modes 0) (instruction 1)] 
-            [(modes 1) (instruction 2)]]
-     :put-to (get instruction 3 nil)}))
-
-
-; kill
-(defn- function-inputs [{:keys [memory pointer]}]
-  (-> (vec (map memory 
-                (range pointer 
-                       (+ (min 4 (- (count memory) pointer)) 
-                          pointer))))
-      (update 0 deconstruct-instruction)
-      apply-modes))
-
-
 (defn apply-rel-base [args rel-base]
   ;(println args rel-base)
   (vec (map 
@@ -51,23 +32,23 @@
   ;; => [[:pos 7] [:pos 5] [:imm 3]]
   )
 
-(defn- apply-modes2 [instruction]
+(defn- apply-modes [instruction]
   (let [modes (get-in instruction [0 0])]
     {:opcode (get-in instruction [0 1])
      :args (map #(vector %1 %2) modes (drop 1 instruction))}))
 
 
-(defn- function-inputs2 [{:keys [memory, pointer, rel-base]}]
+(defn- function-inputs [{:keys [memory, pointer, rel-base]}]
   (-> (vec (map memory
                 (range pointer
                        (+ (min 4 (- (count memory) pointer))
                           pointer))))
       (update 0 deconstruct-instruction)
-      (apply-modes2)
+      (apply-modes)
       (update :args apply-rel-base rel-base)))
 
 (comment
-  (function-inputs2 {:memory [2101 4 5 4 99] :pointer 0 :rel-base 3})
+  (function-inputs {:memory [2101 4 5 4 99] :pointer 0 :rel-base 3})
   ;; => {:opcode 1, :args [[:imm 4] [:pos 8] [:pos 4]]}
   )
 
@@ -76,14 +57,6 @@
     (if (pos? size-gap)
       (vec (concat memory (take (inc size-gap) (repeat 0))))
       memory)))
-
-; kill - neeed to kill output too!
-(defn- arg-val [memory arg & [rel-base]]
-  ;(println memory arg rel-base)
-  (cond
-    (= (arg 0) :imm) (arg 1)
-    (= (arg 0) :pos) ((expand-memory memory (arg 1)) (arg 1))
-    (= (arg 0) :rel) ((expand-memory memory (arg 1)) (+ (if (nil? rel-base) 0 rel-base) (arg 1)))))
 
 
 (defn- bool->int [input]
@@ -97,10 +70,11 @@
   (bool->int (({1 + 2 * 7 < 8 =} opcode) a1 a2)))
 
 
-(defn- get-op-input [arg memory]
+(defn- get-op-input
   "given an argument like [:pos 6] and a memory state, returns the arg value if in :imm
   mode, or the value at that memory position if in :pos mode
   if the position doesn't exist in memory, return 0"
+  [arg memory]
   (if (= :imm (arg 0))
     (arg 1)
     (if (< (arg 1) (count memory)) 
@@ -109,7 +83,6 @@
 
 (defn- do-operation [opcode args {:keys [memory pointer] :as state}]
   ;(println state args (count (:memory state)))
-  
   (let [arg-val1 (get-op-input (args 0) memory)
         arg-val2 (get-op-input (args 1) memory)
         put-to (get-in args [2 1])]
@@ -119,7 +92,7 @@
         (assoc-in [:memory put-to] (operation-result opcode [arg-val1 arg-val2])))))
 
 
-(defn- jump-if2 [opcode args2 {:keys [memory pointer] :as state}]
+(defn- jump-if [opcode args2 {:keys [memory pointer] :as state}]
   (let [jump? (= (= 5 opcode) (not= 0 (get-op-input (args2 0) memory)))]
     (assoc state 
            :pointer 
@@ -145,9 +118,11 @@
   )
 
 
-(defn- process-output [{:keys [memory] :as state}]
+(defn- process-output [[arg1] {:keys [memory]}]
   ;(println "out" state)
-  (arg-val memory ((:args (function-inputs state)) 0) (get state :rel-base 0)))
+  (if (= (arg1 0) :imm)
+    (arg1 1)
+    (memory (arg1 1))))
 
 
 (defn- update-rel-base [[arg] state]
@@ -174,7 +149,7 @@
 (defn- run-singly [{:keys [pointer] :as state} inputs outputs]
   ;(println "========================================================================")
   ;(println state inputs outputs (count (:memory state)))
-  (let [{:keys [opcode args]} (function-inputs2 state)] 
+  (let [{:keys [opcode args]} (function-inputs state)] 
     (cond
       (= 99 opcode) [outputs state]
 
@@ -182,9 +157,9 @@
 
       (= 4 opcode) (recur (assoc state :pointer (+ 2 pointer)) 
                           inputs 
-                          (conj outputs (process-output state)))
+                          (conj outputs (process-output args state)))
 
-      (#{5 6} opcode) (recur (jump-if2 opcode args state) inputs outputs)
+      (#{5 6} opcode) (recur (jump-if opcode args state) inputs outputs)
       
       (= 9 opcode) (recur (update-rel-base args state) inputs outputs)
 
@@ -238,19 +213,19 @@
   (let [out (chan) 
         final (chan (a/sliding-buffer 1))]
     (a/go-loop [{:keys [pointer] :as state} state]
-      (let [{:keys [opcode args]} (function-inputs2 state)]
+      (let [{:keys [opcode args]} (function-inputs state)]
         (cond
           (= 99 opcode) (do (>! final (if (:output state) (:output state) 0))
                             (close! final) (close! out))
 
           (= 3  opcode) (recur (process-input args state (<! in)))
 
-          (= 4  opcode) (do (>! out (process-output state))
+          (= 4  opcode) (do (>! out (process-output args state))
                             (recur (assoc state
                                           :pointer (+ 2 pointer)
-                                          :output (process-output state))))
+                                          :output (process-output args state))))
 
-          (#{5 6} opcode) (recur (jump-if2 opcode args state))
+          (#{5 6} opcode) (recur (jump-if opcode args state))
 
           :else (recur (do-operation opcode args state)))))
     [out final]))
