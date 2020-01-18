@@ -206,7 +206,7 @@
 ;; run intcode computer multithreaded
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn- run-async 
+(defn run-async 
   "given an initial state and in input channel, returns an output channel, and a final
   channel where the final state of the program on halting is dumped out"
   [state in]
