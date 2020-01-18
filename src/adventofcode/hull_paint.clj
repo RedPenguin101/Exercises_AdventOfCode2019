@@ -19,3 +19,10 @@
   (lookup-color [[1 1 0] [1 2 1] [1 1 1]] [2 1])
   ;; => 0
   )
+
+(defn- new-coord [[x y] curr-dir instr]
+  (case (mod (+ curr-dir (if (zero? instr) -1 1)) 4)
+    0 [(inc x) y]
+    1 [x (inc y)]
+    2 [(dec x) y]
+    3 [x (dec y)]))
