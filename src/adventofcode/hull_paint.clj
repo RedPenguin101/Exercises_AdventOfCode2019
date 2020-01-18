@@ -1,0 +1,1 @@
+(ns adventofcode.hull-paint)
