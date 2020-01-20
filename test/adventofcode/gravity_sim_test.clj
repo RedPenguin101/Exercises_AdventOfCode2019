@@ -12,3 +12,12 @@
      {:position [3 -7 -4] :velocity [1 3 3]}
      {:position [1 -7 5] :velocity [-3 1 -3]}
      {:position [2 2 0] :velocity [-1 -3 1]}])
+
+(facts
+ "about energy calculation"
+ (total-energy {:position [2 1 -3] :velocity [-3 2 1]}) => 36
+ (reduce + (map total-energy [{:position [2 1 -3], :velocity [-3 -2 1]}
+                              {:position [1 -8 0], :velocity [-1 1 3]}
+                              {:position [3 -6 1], :velocity [3 2 -3]}
+                              {:position [2 0 4], :velocity [1 -1 -1]}])) => 179)
+

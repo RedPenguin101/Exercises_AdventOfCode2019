@@ -45,3 +45,14 @@
   ;;     {:position (2 0 4), :velocity [1 -1 -1]})
 
   )
+
+(defn total-energy [{:keys [position velocity]}]
+  (* (apply + (map #(Math/abs %) position)) (apply + (map #(Math/abs %) velocity))))
+
+(comment 
+  (reduce + (map total-energy [{:position [2 1 -3], :velocity [-3 -2 1]}
+                               {:position [1 -8 0], :velocity [-1 1 3]}
+                               {:position [3 -6 1], :velocity [3 2 -3]}
+                               {:position [2 0 4], :velocity [1 -1 -1]}]))
+  ;; => 179
+  )
