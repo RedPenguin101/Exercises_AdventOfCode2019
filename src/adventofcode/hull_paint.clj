@@ -1,5 +1,5 @@
 (ns adventofcode.hull-paint
-  (:require [adventofcode.intcode-async :refer [run-async]]
+  (:require [adventofcode.intcode-async :refer [run-async simple-run]]
             [clojure.core.async :refer [chan <!! >!!]]))
 
 (comment
@@ -41,4 +41,6 @@
   (let [in (chan)
         [out] (run-async program in)]
     (run-robot [0 0 0] 0 in out))
+  
+  "FUCK YOU BIG INT!"
   )

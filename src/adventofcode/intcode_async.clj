@@ -153,7 +153,10 @@
     (cond
       (= 99 opcode) [outputs state]
 
-      (= 3 opcode) (recur (process-input args state (first inputs)) (drop 1 inputs) outputs)
+      (= 3 opcode) (recur (process-input args state (if (first inputs)
+                                                      (first inputs)
+                                                      (Integer/parseInt (read-line)))) 
+                          (drop 1 inputs) outputs)
 
       (= 4 opcode) (recur (assoc state :pointer (+ 2 pointer)) 
                           inputs 
@@ -166,7 +169,10 @@
       :else (recur (do-operation opcode args state) inputs outputs))))
 
 
-(defn simple-run [memory & inputs]
+(defn simple-run 
+  "Given an initial memory state and optionally a list of inputs, runs the computer
+  until termination and returns the state at termination"
+  [memory & inputs]
   (nth (run-singly (boot memory) (when inputs inputs) []) 1))
 
 
