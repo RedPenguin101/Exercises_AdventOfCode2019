@@ -22,29 +22,17 @@
                    (:velocity body1)))))
 
 (defn- update-velocities [bodies]
-  (for [body bodies]
-    (reduce update-velocity body bodies)))
+  (doall (for [body bodies]
+           (reduce update-velocity body bodies))))
 
 (defn step [bodies]
   (->> (update-velocities bodies)
       (map update-position)))
 
-(comment
-  "take multiple steps like"
-
-  (def bodies [{:position [-1 0 2] :velocity [0 0 0]}
-               {:position [2 -10 -7] :velocity [0 0 0]}
-               {:position [4 -8 8] :velocity [0 0 0]}
-               {:position [3 5 -1] :velocity [0 0 0]}])
-
-  "this would give the positions after 10 steps"
-  (last (take 11 (iterate step bodies)))
-  ;; => ({:position (2 1 -3), :velocity [-3 -2 1]}
-  ;;     {:position (1 -8 0), :velocity [-1 1 3]}
-  ;;     {:position (3 -6 1), :velocity [3 2 -3]}
-  ;;     {:position (2 0 4), :velocity [1 -1 -1]})
-
-  )
+(defn steps [bodies times]
+  (if (= times 0)
+    bodies
+    (recur (step bodies) (dec times)))) 
 
 (defn total-energy [{:keys [position velocity]}]
   (* (apply + (map #(Math/abs %) position)) (apply + (map #(Math/abs %) velocity))))
@@ -63,5 +51,14 @@
   {:position (vec (map #(Integer/parseInt %) (rest (re-matches input-pattern string))))
    :velocity [0 0 0]})
 
-(defn slurp-to-body [filename]
+(defn slurp-to-bodies [filename]
   (map parse-input-coord (clojure.string/split-lines (slurp filename))))
+
+(comment
+  "day 12 part one"
+  (def start (slurp-to-bodies "resources/inputday12.txt"))
+  (->> (steps start 1000)
+       (map total-energy)
+       (apply +))
+  ;; => 13045
+  )
