@@ -1,0 +1,54 @@
+registration identifier
+
+move on grid
+detect color of panel
+paint panel black or white (all black at start)
+
+intcode inputs
+0 - over black
+1 - over white
+
+output: 
+color to paint (0 black, 1 white)
+direction to turn: 0 left, 1 right
+when turned it moves one panel.
+starts facing up
+
+need to know the number of unique panels painted (regardless of color)
+
+plan:
+have vector representing painted co-ords relative to starting point
+have function which, given co-ords, looks up color
+feed that into computer, collect two values - paint color and turn dir
+use those values to update the vector (adding new co-ord and color)
+(will need to keep track of the direction of the robot)
+count the set of the final vector.
+
+functions
+run-robot
+lookup-color
+update-surface
+
+GRAVITY SIM
+position is [x y z]
+velocity is [vx vy vz]
+
+algo is:
+* update velocity vector of each body for gravity
+* apply velocity vector to position
+
+gravity application:
+for each body A calc the impact of each other body B on it:
+* compare x pos. If Ax > Bx, dec Avx, if Ax < Bx, inc Avx. if Ax = Bx, Avx doesn't change
+* repeat for y and z
+* repeat for each body
+
+data-structure:
+* for each body, {:pos [x y z] :vel [vx vy vz]}
+* a time step is represented as a vector of these
+* history is represented as a vector of these, where the time-step at position n etc. Don't know if this is actually needed, probably don't need to decide yet.
+
+functions:
+* update-position: given a body, apply the velocity to the position to derive the new pos
+* update-velocities: given a vector of bodies, update the velocity of each based on their relative positions
+* total-energy: just sum up all the absolute values
