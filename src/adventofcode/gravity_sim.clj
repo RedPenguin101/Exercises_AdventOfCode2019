@@ -56,3 +56,12 @@
                                {:position [2 0 4], :velocity [1 -1 -1]}]))
   ;; => 179
   )
+
+(def input-pattern #"<x=(-?\d+), y=(-?\d+), z=(-?\d+)>")
+
+(defn- parse-input-coord [string]
+  {:position (vec (map #(Integer/parseInt %) (rest (re-matches input-pattern string))))
+   :velocity [0 0 0]})
+
+(defn slurp-to-body [filename]
+  (map parse-input-coord (clojure.string/split-lines (slurp filename))))

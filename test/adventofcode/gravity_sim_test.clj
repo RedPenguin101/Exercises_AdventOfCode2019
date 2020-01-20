@@ -21,3 +21,10 @@
                               {:position [3 -6 1], :velocity [3 2 -3]}
                               {:position [2 0 4], :velocity [1 -1 -1]}])) => 179)
 
+(fact 
+ "about slurping input"
+ (slurp-to-body "resources/inputday12.txt") 
+ => [{:position [6 10 10] :velocity [0 0 0]}
+     {:position [-9 3 17] :velocity [0 0 0]}
+     {:position [9 -4 14] :velocity [0 0 0]}
+     {:position [4 14 4] :velocity [0 0 0]}])
