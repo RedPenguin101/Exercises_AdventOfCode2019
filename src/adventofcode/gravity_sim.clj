@@ -7,7 +7,10 @@
 (defn- update-position [{:keys [position velocity] :as body}]
   (assoc body :position (vec (map #(+ %1 %2) position velocity))))
 
-(defn- vel-modifier [a b]
+(defn- vel-modifier
+  "given two positions on an axis, return a function to apply to the velocity
+   of the asteroid at position a at the subsequent step"
+  [a b]
   (cond
     (zero? (- a b)) identity
     (pos? (- a b))  dec
@@ -73,4 +76,41 @@
        (map total-energy)
        (apply +))
   ;; => 13045
+  )
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;
+;; acting on a single axis
+;;;;;;;;;;;;;;;;;;;;;;;;
+
+(comment 
+  "an alternative representation is as positions and velocities
+  on a single axis"
+  
+  (def x {:positions [6 -9 9 4] :velocities [0 0 0 0] :axis :x})
+  
+  "the modifier to the velocity of an asteroid is the number of asteroids
+  with a greater position value than it, less the number with a lesser"
+  
+  "take the position 6, filter-count the number of entries > 6 (1)
+  and the number of entries < 6 (2) and deduct the former from the latter
+  and you have the velocity change")
+
+(defn- velocity-mod* [pos pos-vect]
+  (- (count (filter #(< pos %) pos-vect)) (count (filter #(> pos %) pos-vect))))
+
+(defn- velocity-mod [positions]
+  (map #(velocity-mod* % positions) positions))
+
+(velocity-mod [6 -9 9 4])
+
+(defn axis-step [{:keys [positions velocities] :as bodies}]
+  (let [new-vels (map + velocities (velocity-mod positions))]
+    (assoc bodies 
+           :velocities new-vels
+           :positions (map + positions new-vels))))
+
+(comment "from tests"
+  (axis-step {:positions [-1 2 4 3] :velocities [0 0 0 0]})
+  ;; => {:positions (2 3 1 2), :velocities (3 1 -3 -1)}
   )
