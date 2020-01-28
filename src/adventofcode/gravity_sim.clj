@@ -105,12 +105,55 @@
 (velocity-mod [6 -9 9 4])
 
 (defn axis-step [{:keys [positions velocities] :as bodies}]
-  (let [new-vels (map + velocities (velocity-mod positions))]
+  (let [new-vels (vec (map + velocities (velocity-mod positions)))]
     (assoc bodies 
            :velocities new-vels
-           :positions (map + positions new-vels))))
+           :positions (vec (map + positions new-vels)))))
 
 (comment "from tests"
   (axis-step {:positions [-1 2 4 3] :velocities [0 0 0 0]})
-  ;; => {:positions (2 3 1 2), :velocities (3 1 -3 -1)}
+  ;; => {:positions [2 3 1 2], :velocities [3 1 -3 -1]}
   )
+
+(defn cycle-length
+  ([bodies] (cycle-length (axis-step bodies) (:positions bodies) 1))
+  ([bodies reference cycles]
+   (if (= (:positions bodies) reference)
+     cycles
+     (recur (axis-step bodies) reference (inc cycles)))))
+
+(comment 
+  (def x {:positions [-1 2 4 3] :velocities [0 0 0 0]})
+  (def y {:positions [0 -10 -8 5] :velocities [0 0 0 0]})
+  (def z {:positions [2 -7 8 -1] :velocities [0 0 0 0]})
+  
+  (cycle-length x)
+  ;; => 17
+  
+  (cycle-length y)
+  ;; => 27
+  
+  (cycle-length z)
+  ;; => 43
+  
+  (def x2 {:position [-8 5 2 9] :velocity [0 0 0 0]})
+  
+  (cycle-length x2)
+  )
+
+(def start [{:position [-1 0 2] :velocity [0 0 0]}
+            {:position [2 -10 -7] :velocity [0 0 0]}
+            {:position [4 -8 8] :velocity [0 0 0]}
+            {:position [3 5 -1] :velocity [0 0 0]}])
+
+(defn ->axis-format [bodies]
+  [(hash-map :positions (vec (map #(nth (:position %) 0) bodies)) :velocities [0 0 0 0])
+   (hash-map :positions (vec (map #(nth (:position %) 1) bodies)) :velocities [0 0 0 0])
+   (hash-map :positions (vec (map #(nth (:position %) 2) bodies)) :velocities [0 0 0 0])])
+
+
+
+(->> start
+     ->axis-format
+     (map cycle-length)
+     )
