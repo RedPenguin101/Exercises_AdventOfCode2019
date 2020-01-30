@@ -5,3 +5,4 @@ adventofcode.iml
 hs_err_pid6598.log
 .lein-repl-history
 *.swp
+*.log
