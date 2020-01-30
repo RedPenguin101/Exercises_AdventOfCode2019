@@ -21,4 +21,6 @@
 
 (comment
   (input-parse "resources/inputday14.txt")
+  ;; => ({:XSFVQ {:inputs [[11 :BNMWF] [1 :MRVFT] [10 :PBNSF]], :yields 7}} etc.
   )
+
