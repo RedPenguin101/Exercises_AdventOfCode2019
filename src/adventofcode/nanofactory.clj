@@ -24,10 +24,12 @@
   ;; => ({:XSFVQ {:inputs [[11 :BNMWF] [1 :MRVFT] [10 :PBNSF]], :yields 7}} etc.
   )
 
+(defn deconstruct [[required ing] recipies]
+  (* required (ffirst (:inputs (ing recipies)))))
 
 (defn ore-amount [ing-list recipies]
   (if (empty? ing-list)
     nil
     (if (= :ORE (ing-list 1))
       (ing-list 0)
-      18)))
+      (deconstruct ing-list recipies))))
