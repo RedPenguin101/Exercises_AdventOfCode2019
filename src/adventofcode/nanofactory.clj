@@ -55,7 +55,11 @@
   is the number produced (i.e. the difference between them is the slack)")
 
 (defn- calc-ore-req [production recipies]
- ((:ORE production) 0))
+  (if (= [:ORE] (keys production)) 
+    ((:ORE production) 0)
+    18))
 
 (defn ore-amount2 [[number requirement] recipies]
   (calc-ore-req {requirement [number number]} recipies))
+
+(keys {:hello 0 "world" 123})
