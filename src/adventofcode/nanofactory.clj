@@ -28,4 +28,6 @@
 (defn ore-amount [ing-list recipies]
   (if (empty? ing-list)
     nil
-    5))
+    (if (= :ORE (ing-list 1))
+      (ing-list 0)
+      18)))
