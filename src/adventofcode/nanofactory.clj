@@ -24,5 +24,6 @@
   ;; => ({:XSFVQ {:inputs [[11 :BNMWF] [1 :MRVFT] [10 :PBNSF]], :yields 7}} etc.
   )
 
-(defn ore-amount [ing-list]
+
+(defn ore-amount [ing-list recipies]
   nil)
