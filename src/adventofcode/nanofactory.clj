@@ -38,12 +38,12 @@
 (:inputs (:A2 recipies))
 
 (defn deconstruct [[required ing-name] recipies]
-  (let [ingredients (:inputs (ing-name recipies))]
-       (* (required-batches required (:yields (ing-name recipies))) (ffirst ingredients))))
+  (if (= ing-name :ORE)
+    required
+    (let [ingredients (:inputs (ing-name recipies))]
+      (* (required-batches required (:yields (ing-name recipies))) (ffirst ingredients)))))
 
 (defn ore-amount [ing recipies]
   (if (empty? ing)
     nil
-    (if (= :ORE (ing 1))
-      (ing 0)
-      (deconstruct ing recipies))))
+    (deconstruct ing recipies)))
