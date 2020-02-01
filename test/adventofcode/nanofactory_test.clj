@@ -7,5 +7,5 @@
 
 (fact
  (ore-amount [] recipies) => nil
- ;;(ore-amount [5 :ORE] recipies) => 5
+ (ore-amount [5 :ORE] recipies) => 5
  )

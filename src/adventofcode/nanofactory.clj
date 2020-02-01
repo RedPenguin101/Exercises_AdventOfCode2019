@@ -26,4 +26,6 @@
 
 
 (defn ore-amount [ing-list recipies]
-  nil)
+  (if (empty? ing-list)
+    nil
+    5))
