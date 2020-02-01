@@ -5,7 +5,9 @@
 (def test-recipies
   {:A {:yields 1 :inputs [[9 :ORE]]}
    :B {:yields 2 :inputs [[3 :ORE]]}
-   :A2 {:yields 1 :inputs [[1 :A] [1 :ORE]]}})
+   :A2 {:yields 1 :inputs [[1 :A] [1 :ORE]]}
+   :B2 {:yields 2 :inputs [[2 :B] [2 :ORE]]}
+   :AB {:yields 3 :inputs [[3 :A] [4 :B]]}})
 
 (fact
  (ore-amount [] test-recipies) => nil
@@ -16,4 +18,8 @@
  (ore-amount [1 :B] test-recipies) => 3
  (ore-amount [2 :B] test-recipies) => 3
  (ore-amount [1 :A2] test-recipies) => 10
+ (ore-amount [2 :B2] test-recipies) => 5
+ (ore-amount [2 :B2] test-recipies) => 5
+ (ore-amount [3 :B2] test-recipies) => 10
+ (ore-amount [3 :AB] test-recipies) => 33
  )
