@@ -24,17 +24,17 @@
   ;; => ({:XSFVQ {:inputs [[11 :BNMWF] [1 :MRVFT] [10 :PBNSF]], :yields 7}} etc.
   )
 
-(defn make-batches [required yields]
+(defn required-batches [required yields]
   (if (= (mod required yields) 0)
     (/ required yields)
     (/ (+ required (- yields (mod required yields))) yields)))
 
-(defn deconstruct [[required ing] recipies]
-  (* (make-batches required (:yields (ing recipies))) (ffirst (:inputs (ing recipies)))))
+(defn deconstruct [[required ing-name] recipies]
+  (* (required-batches required (:yields (ing-name recipies))) (ffirst (:inputs (ing-name recipies)))))
 
-(defn ore-amount [ing-list recipies]
-  (if (empty? ing-list)
+(defn ore-amount [ing recipies]
+  (if (empty? ing)
     nil
-    (if (= :ORE (ing-list 1))
-      (ing-list 0)
-      (deconstruct ing-list recipies))))
+    (if (= :ORE (ing 1))
+      (ing 0)
+      (deconstruct ing recipies))))
