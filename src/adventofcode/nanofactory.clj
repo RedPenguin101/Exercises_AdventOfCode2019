@@ -29,8 +29,17 @@
     (/ required yields)
     (/ (+ required (- yields (mod required yields))) yields)))
 
+(def recipies
+  {:A {:yields 1 :inputs [[9 :ORE]]}
+   :B {:yields 2 :inputs [[3 :ORE]]}
+   :A2 {:yields 1 :inputs [[1 :A] [1 :ORE]]}})
+
+(deconstruct [1 :A2] recipies)
+(:inputs (:A2 recipies))
+
 (defn deconstruct [[required ing-name] recipies]
-  (* (required-batches required (:yields (ing-name recipies))) (ffirst (:inputs (ing-name recipies)))))
+  (let [ingredients (:inputs (ing-name recipies))]
+       (* (required-batches required (:yields (ing-name recipies))) (ffirst ingredients))))
 
 (defn ore-amount [ing recipies]
   (if (empty? ing)
