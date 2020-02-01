@@ -15,5 +15,5 @@
  (ore-amount [3 :A] test-recipies) => 27
  (ore-amount [1 :B] test-recipies) => 3
  (ore-amount [2 :B] test-recipies) => 3
- ;(ore-amount [1 :A2] test-recipies) => 10
+ (ore-amount [1 :A2] test-recipies) => 10
  )

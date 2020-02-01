@@ -39,7 +39,7 @@
     required
     (let [ingredients (:inputs (ing-name recipies))]
       (* (required-batches required (:yields (ing-name recipies)))
-         (deconstruct (first ingredients) recipies)))))
+         (reduce + (map #(deconstruct % recipies) ingredients))))))
 
 (defn ore-amount [ing recipies]
   (if (empty? ing)
