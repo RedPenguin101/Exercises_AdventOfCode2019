@@ -45,3 +45,17 @@
   (if (empty? ing)
     nil
     (deconstruct ing recipies)))
+
+(comment 
+  "new representation: recipes are represented as before
+  but now the algo acts on a state that looks like this"
+  {:A [4 10] :B [4 7]}
+  "where the hashmap values are the number of those chemicals
+  the first value is the number actually needed and the second
+  is the number produced (i.e. the difference between them is the slack)")
+
+(defn- calc-ore-req [production recipies]
+  (:ORE production))
+
+(defn ore-amount2 [[number requirement] recipies]
+  (calc-ore-req {requirement number} recipies))
