@@ -34,9 +34,6 @@
    :B {:yields 2 :inputs [[3 :ORE]]}
    :A2 {:yields 1 :inputs [[1 :A] [1 :ORE]]}})
 
-(deconstruct [1 :A2] recipies)
-(:inputs (:A2 recipies))
-
 (defn deconstruct [[required ing-name] recipies]
   (if (= ing-name :ORE)
     required
