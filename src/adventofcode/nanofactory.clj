@@ -55,7 +55,7 @@
   is the number produced (i.e. the difference between them is the slack)")
 
 (defn- calc-ore-req [production recipies]
-  (:ORE production))
+ ((:ORE production) 0))
 
 (defn ore-amount2 [[number requirement] recipies]
-  (calc-ore-req {requirement number} recipies))
+  (calc-ore-req {requirement [number number]} recipies))
