@@ -25,7 +25,7 @@
   )
 
 (defn deconstruct [[required ing] recipies]
-  (* required (ffirst (:inputs (ing recipies)))))
+  (* (/ required (:yields (ing recipies))) (ffirst (:inputs (ing recipies)))))
 
 (defn ore-amount [ing-list recipies]
   (if (empty? ing-list)
