@@ -38,7 +38,8 @@
   (if (= ing-name :ORE)
     required
     (let [ingredients (:inputs (ing-name recipies))]
-      (* (required-batches required (:yields (ing-name recipies))) (ffirst ingredients)))))
+      (* (required-batches required (:yields (ing-name recipies)))
+         (deconstruct (first ingredients) recipies)))))
 
 (defn ore-amount [ing recipies]
   (if (empty? ing)
