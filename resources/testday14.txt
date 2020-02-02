@@ -1,4 +1,4 @@
-RE => 2 A
+9 ORE => 2 A
 8 ORE => 3 B
 7 ORE => 5 C
 3 A, 4 B => 1 AB

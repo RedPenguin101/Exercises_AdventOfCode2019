@@ -34,4 +34,11 @@
 (facts
  (repeat-to-ore {:FUEL 1} test-recipies2) => 165
  ;(repeat-to-ore {:FUEL 1} (input-parse "resources/testday14.txt")) => 165
+ ;(repeat-to-ore {:FUEL 1} (input-parse "resources/testday14-2.txt")) => 13312
+ ;(repeat-to-ore {:FUEL 1} (input-parse "resources/testday14-3.txt")) => 180697
+ ;(repeat-to-ore {:FUEL 1} (input-parse "resources/testday14-4.txt")) => 2210736
+ )
+
+(facts
+ (input-parse "resources/testday14.txt") => test-recipies2
  )

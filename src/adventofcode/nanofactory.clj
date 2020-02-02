@@ -1,27 +1,35 @@
 (ns adventofcode.nanofactory
   (:require [clojure.string :as s]))
 
-;; ingredient list is just an array [[2 :A] [3 :B]]
-;; a receipe is a map {:XSFVQ {:inputs [[11 :BNMWF] [1 :MRVFT] [10 :PBNSF]], :yields 7}}
-
 (defn ingredient-parse [ing-string]
   (let [[amount ingred] (s/split ing-string #" ")]
-    [(Integer/parseInt amount) (keyword ingred)]))
+    {(keyword ingred) (Integer/parseInt amount)}))
+
+(comment
+  (ingredient-parse "5 H")
+  ;; => {:H 5}
+  )
 
 (defn recipe-parse [[inputs outputs]]
-  (let [[yield output] (ingredient-parse (s/trim outputs))]
-    {output {:inputs (vec (map ingredient-parse (s/split (s/trim inputs) #", "))) 
+  (let [[output yield] (apply vec (ingredient-parse (s/trim outputs)))]
+    {output {:inputs (apply merge (map ingredient-parse (s/split (s/trim inputs) #", "))) 
              :yields yield}}))
+
+(comment
+  (recipe-parse ["5 H, 7 B" "6 U"])
+  ;; => {:U {:inputs {:H 5, :B 7}, :yields 6}}
+  )
 
 (defn input-parse [filename]
   (->> (slurp filename)
        s/split-lines
        (map #(s/split % #"=>"))
-       (map recipe-parse)))
+       (map recipe-parse)
+       (apply merge)))
 
 (comment
   (input-parse "resources/inputday14.txt")
-  ;; => ({:XSFVQ {:inputs [[11 :BNMWF] [1 :MRVFT] [10 :PBNSF]], :yields 7}} etc.
+  ;; => {:ZXMGK {:inputs {:WPFP 13}, :yields 6}, :PDCV {:inputs {:PFQRG 4, :XVNL 14}, :yields 5} etc
   )
 
 (defn required-batches [required yields]
@@ -55,3 +63,6 @@
   (if (= [:ORE] (keys chemicals))
     (:ORE chemicals)
     (recur (next-level chemicals recipies) recipies)))
+
+(def r (input-parse "resources/testday14.txt"))
+r
