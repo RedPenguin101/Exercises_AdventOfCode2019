@@ -46,3 +46,6 @@
        flatten
        (apply hash-map)))
 
+(defn next-level [chemicals recipies]
+  {:ORE 9})
+            

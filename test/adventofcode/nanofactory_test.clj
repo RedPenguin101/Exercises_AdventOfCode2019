@@ -2,14 +2,6 @@
   (:require [adventofcode.nanofactory :refer :all]
             [midje.sweet :refer :all]))
 
-(def test-recipies
-  {:A {:yields 1 :inputs [[9 :ORE]]}
-   :B {:yields 2 :inputs [[3 :ORE]]}
-   :A2 {:yields 1 :inputs [[1 :A] [1 :ORE]]}
-   :B2 {:yields 2 :inputs [[2 :B] [2 :ORE]]}
-   :AB {:yields 3 :inputs [[3 :A] [4 :B]]}})
-
-
 (def test-recipies2
   {:A {:yields 2 :inputs {:ORE 9}}
    :B {:yields 3 :inputs {:ORE 8}}
@@ -29,4 +21,8 @@
  (process :B 4 test-recipies2) => {:ORE 16}
  (process :AB 1 test-recipies2) => {:A 3 :B 4}
  (process :FUEL 1 test-recipies2) => {:AB 2 :BC 3 :CA 4}
+ )
+
+(facts
+ (next-level {:A 2} recipies) => {:ORE 9}
  )
