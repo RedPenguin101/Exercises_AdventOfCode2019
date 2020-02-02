@@ -29,3 +29,7 @@
     (/ required yields)
     (/ (+ required (- yields (mod required yields))) yields)))
 
+(defn process [chemical amount recipies]
+  {:ORE (* (get-in recipies [chemical :inputs :ORE]) 
+           (required-batches amount (get-in recipies [chemical :yields])))})
+
