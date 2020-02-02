@@ -31,6 +31,7 @@
  (next-level {:ORE 100} test-recipies2) => {:ORE 100}
  )
 
-(future-facts
+(facts
  (repeat-to-ore {:FUEL 1} test-recipies2) => 165
+ ;(repeat-to-ore {:FUEL 1} (input-parse "resources/testday14.txt")) => 165
  )

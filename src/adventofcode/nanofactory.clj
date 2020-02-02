@@ -52,4 +52,6 @@
   (apply merge-with + (map #(process (% 0) (% 1) recipies) (vec chemicals))))
 
 (defn repeat-to-ore [chemicals recipies]
-  true)
+  (if (= [:ORE] (keys chemicals))
+    (:ORE chemicals)
+    (recur (next-level chemicals recipies) recipies)))
