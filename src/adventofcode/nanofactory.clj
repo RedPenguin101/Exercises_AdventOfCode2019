@@ -37,16 +37,6 @@
     (/ required yields)
     (/ (+ required (- yields (mod required yields))) yields)))
 
-(def recipies
-  {:A {:yields 2 :inputs {:ORE 9}}
-   :B {:yields 3 :inputs {:ORE 8}}
-   :C {:yields 5 :inputs {:ORE 7}}
-   :AB {:yields 1 :inputs {:A 3 :B 4}}
-   :BC {:yields 1 :inputs  {:B 5 :C 7}}
-   :CA {:yields 1 :inputs {:C 4 :A 1}}
-   :FUEL {:yields 1 :inputs {:AB 2 :BC 3 :CA 4}}})
-
-
 (defn process [chemical amount recipies]
   (if (= chemical :ORE)
     {:ORE amount}
@@ -63,6 +53,3 @@
   (if (= [:ORE] (keys chemicals))
     (:ORE chemicals)
     (recur (next-level chemicals recipies) recipies)))
-
-(def r (input-parse "resources/testday14.txt"))
-r
