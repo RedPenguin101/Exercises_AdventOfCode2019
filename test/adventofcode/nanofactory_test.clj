@@ -21,8 +21,16 @@
  (process :B 4 test-recipies2) => {:ORE 16}
  (process :AB 1 test-recipies2) => {:A 3 :B 4}
  (process :FUEL 1 test-recipies2) => {:AB 2 :BC 3 :CA 4}
+ (process :ORE 100 test-recipies2) => {:ORE 100}
  )
 
 (facts
- (next-level {:A 2} recipies) => {:ORE 9}
+ (next-level {:A 2} test-recipies2) => {:ORE 9}
+ (next-level {:A 2 :B 3} test-recipies2) => {:ORE 17}
+ (next-level {:AB 1} test-recipies2) => {:A 3 :B 4}
+ (next-level {:ORE 100} test-recipies2) => {:ORE 100}
+ )
+
+(future-facts
+ (repeat-to-ore {:FUEL 1} test-recipies2) => 165
  )

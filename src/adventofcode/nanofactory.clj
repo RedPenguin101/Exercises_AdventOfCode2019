@@ -40,11 +40,16 @@
 
 
 (defn process [chemical amount recipies]
-  (->> (keys (get-in recipies [chemical :inputs]))
-       (map #(vector % (* (get-in recipies [chemical :inputs %]) 
-                          (required-batches amount (get-in recipies [chemical :yields])))))
-       flatten
-       (apply hash-map)))
+  (if (= chemical :ORE)
+    {:ORE amount}
+    (->> (keys (get-in recipies [chemical :inputs]))
+         (map #(vector % (* (get-in recipies [chemical :inputs %]) 
+                            (required-batches amount (get-in recipies [chemical :yields])))))
+         flatten
+         (apply hash-map))))
 
 (defn next-level [chemicals recipies]
   (apply merge-with + (map #(process (% 0) (% 1) recipies) (vec chemicals))))
+
+(defn repeat-to-ore [chemicals recipies]
+  true)
