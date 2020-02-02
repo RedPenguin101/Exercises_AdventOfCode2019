@@ -27,5 +27,5 @@
  (process :B 2 test-recipies2) => {:ORE 8}
  (process :B 3 test-recipies2) => {:ORE 8}
  (process :B 4 test-recipies2) => {:ORE 16}
- ;(process :AB 1 test-recipies2) => {:A 3 :B 4}
+ (process :AB 1 test-recipies2) => {:A 3 :B 4}
  )
