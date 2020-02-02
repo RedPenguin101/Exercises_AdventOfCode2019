@@ -46,4 +46,3 @@
        flatten
        (apply hash-map)))
 
-(hash-map [:a 1] [:b 2])

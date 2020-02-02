@@ -15,9 +15,9 @@
    :B {:yields 3 :inputs {:ORE 8}}
    :C {:yields 5 :inputs {:ORE 7}}
    :AB {:yields 1 :inputs {:A 3 :B 4}}
-   :BC {:yields 1 :inputs [[5 :B] [7 :C]]}
-   :CA {:yields 1 :inputs [[4 :C] [1 :A]]}
-   :FUEL {:yields 1 :inputs [[2 :AB] [3 :BC] [4 :CA]]}
+   :BC {:yields 1 :inputs  {:B 5 :C 7}}
+   :CA {:yields 1 :inputs {:C 4 :A 1}}
+   :FUEL {:yields 1 :inputs {:AB 2 :BC 3 :CA 4}}
    })
 
 (facts
@@ -28,4 +28,5 @@
  (process :B 3 test-recipies2) => {:ORE 8}
  (process :B 4 test-recipies2) => {:ORE 16}
  (process :AB 1 test-recipies2) => {:A 3 :B 4}
+ (process :FUEL 1 test-recipies2) => {:AB 2 :BC 3 :CA 4}
  )
